@@ -1,0 +1,21 @@
+# 빌드 결과물
+Binaries/
+Build/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# IDE
+.vs/
+.idea/
+*.VC.db
+*.VC.opendb
+*.sln
+
+# 파생 파일
+FileOpenOrder/
+*.suo
+*.user
+
+# 에셋은 커밋 (Content 폴더)
+# 단, 용량 큰 에셋은 Git LFS 사용 권장
