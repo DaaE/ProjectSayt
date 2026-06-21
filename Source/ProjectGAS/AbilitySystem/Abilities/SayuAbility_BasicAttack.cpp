@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASAbility_BasicAttack.h"
+#include "SayuAbility_BasicAttack.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "GameplayTagsManager.h"
@@ -9,7 +9,7 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
-UProjectGASAbility_BasicAttack::UProjectGASAbility_BasicAttack()
+USayuAbility_BasicAttack::USayuAbility_BasicAttack()
 {
 	// InstancingPolicy는 부모 생성자에서 이미 설정됨
 
@@ -31,7 +31,7 @@ UProjectGASAbility_BasicAttack::UProjectGASAbility_BasicAttack()
 	ActivationOwnedTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Attack.Light")));
 }
 
-void UProjectGASAbility_BasicAttack::ActivateAbility(
+void USayuAbility_BasicAttack::ActivateAbility(
 	const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, 
 	const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
@@ -51,28 +51,28 @@ void UProjectGASAbility_BasicAttack::ActivateAbility(
 	FGameplayTag WindowOpenTag =
 		FGameplayTag::RequestGameplayTag(FName("Event.Combo.WindowOpen"));
 	WaitWindowOpenTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, WindowOpenTag, nullptr, false, false);
-	WaitWindowOpenTask->EventReceived.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnComboWindowOpenEvent);
+	WaitWindowOpenTask->EventReceived.AddDynamic(this, &USayuAbility_BasicAttack::OnComboWindowOpenEvent);
 	WaitWindowOpenTask->ReadyForActivation();
 
 	// 콤보 윈도우 Close 리스너
 	FGameplayTag WindowCloseTag =
 		FGameplayTag::RequestGameplayTag(FName("Event.Combo.WindowClose"));
 	WaitWindowCloseTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, WindowCloseTag, nullptr, false, false);
-	WaitWindowCloseTask->EventReceived.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnComboWindowCloseEvent);
+	WaitWindowCloseTask->EventReceived.AddDynamic(this, &USayuAbility_BasicAttack::OnComboWindowCloseEvent);
 	WaitWindowCloseTask->ReadyForActivation();
 
 	// 콤보 입력 리스너 (콤보 생애 동안 계속 수신)
 	FGameplayTag ComboInputTag =
 		FGameplayTag::RequestGameplayTag(FName("Event.Combo.Input"));
 	WaitComboInputTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, ComboInputTag, nullptr, false, false);
-	WaitComboInputTask->EventReceived.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnComboInputEvent);
+	WaitComboInputTask->EventReceived.AddDynamic(this, &USayuAbility_BasicAttack::OnComboInputEvent);
 	WaitComboInputTask->ReadyForActivation();
 
 	// 1타 시작 - 이후 콤보 진행 전부 PlayComboStep이 전담
 	PlayComboStep(0);
 }
 
-void UProjectGASAbility_BasicAttack::EndAbility(const FGameplayAbilitySpecHandle Handle,
+void USayuAbility_BasicAttack::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	bool bReplicateEndAbility, bool bWasCancelled)
 {
@@ -100,7 +100,7 @@ void UProjectGASAbility_BasicAttack::EndAbility(const FGameplayAbilitySpecHandle
 	// 내부적으로 정리 작업(태그 제거, 인스턴스 정리 등)을 하기 때문이에요.
 }
 
-UGameplayEffect* UProjectGASAbility_BasicAttack::GetCooldownGameplayEffect() const
+UGameplayEffect* USayuAbility_BasicAttack::GetCooldownGameplayEffect() const
 {
 	if (CooldownEffectClass)
 	{
@@ -111,7 +111,7 @@ UGameplayEffect* UProjectGASAbility_BasicAttack::GetCooldownGameplayEffect() con
 	return nullptr;
 }
 
-void UProjectGASAbility_BasicAttack::OnMontageCompleted()
+void USayuAbility_BasicAttack::OnMontageCompleted()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Montage Completed - Normal End"));
 	// "정상 종료" - 여기서 쿨타임을 정식으로 시작해도 됨
@@ -119,7 +119,7 @@ void UProjectGASAbility_BasicAttack::OnMontageCompleted()
 		GetCurrentActivationInfo(), true, false);
 }
 
-void UProjectGASAbility_BasicAttack::OnMontageInterrupted()
+void USayuAbility_BasicAttack::OnMontageInterrupted()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Montage Interrupted - Cancelled"));
 	// "비정상 캔슬" - 다른 어빌리티가 끼어들어 중단된 경우
@@ -127,14 +127,14 @@ void UProjectGASAbility_BasicAttack::OnMontageInterrupted()
 		GetCurrentActivationInfo(), true, true);
 }
 
-void UProjectGASAbility_BasicAttack::OnMontageCancelled()
+void USayuAbility_BasicAttack::OnMontageCancelled()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Montage Cancelled"));
 	EndAbility(GetCurrentAbilitySpecHandle(), CurrentActorInfo,
 		GetCurrentActivationInfo(), true, true);
 }
 
-void UProjectGASAbility_BasicAttack::OnComboWindowOpenEvent(FGameplayEventData Payload)
+void USayuAbility_BasicAttack::OnComboWindowOpenEvent(FGameplayEventData Payload)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Combo Window OPEN event received"));
 
@@ -156,7 +156,7 @@ void UProjectGASAbility_BasicAttack::OnComboWindowOpenEvent(FGameplayEventData P
 	}
 }
 
-void UProjectGASAbility_BasicAttack::OnComboWindowCloseEvent(FGameplayEventData Payload)
+void USayuAbility_BasicAttack::OnComboWindowCloseEvent(FGameplayEventData Payload)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Combo Window CLOSE event received"));
 
@@ -173,7 +173,7 @@ void UProjectGASAbility_BasicAttack::OnComboWindowCloseEvent(FGameplayEventData 
 	}
 }
 
-void UProjectGASAbility_BasicAttack::OnComboInputEvent(FGameplayEventData Payload)
+void USayuAbility_BasicAttack::OnComboInputEvent(FGameplayEventData Payload)
 {
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	if (!ASC) return;
@@ -191,7 +191,7 @@ void UProjectGASAbility_BasicAttack::OnComboInputEvent(FGameplayEventData Payloa
 	}
 }
 
-void UProjectGASAbility_BasicAttack::PlayComboStep(int32 Index)
+void USayuAbility_BasicAttack::PlayComboStep(int32 Index)
 {
 	CurrentComboIndex = Index;
 	UE_LOG(LogTemp, Warning, TEXT("Combo Hit: %d"), Index + 1);
@@ -245,8 +245,8 @@ void UProjectGASAbility_BasicAttack::PlayComboStep(int32 Index)
 	}
 
 	MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, MontageToPlay);
-	MontageTask->OnCompleted.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnMontageCompleted);
-	MontageTask->OnInterrupted.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnMontageInterrupted);
-	MontageTask->OnCancelled.AddDynamic(this, &UProjectGASAbility_BasicAttack::OnMontageCancelled);
+	MontageTask->OnCompleted.AddDynamic(this, &USayuAbility_BasicAttack::OnMontageCompleted);
+	MontageTask->OnInterrupted.AddDynamic(this, &USayuAbility_BasicAttack::OnMontageInterrupted);
+	MontageTask->OnCancelled.AddDynamic(this, &USayuAbility_BasicAttack::OnMontageCancelled);
 	MontageTask->ReadyForActivation();
 }

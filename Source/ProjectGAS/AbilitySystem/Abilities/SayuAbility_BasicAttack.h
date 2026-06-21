@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SayuGameplayAbility.h"
-#include "ProjectGASAbility_BasicAttack.generated.h"
+#include "SayuAbility_BasicAttack.generated.h"
 
 class UAnimMontage;
 class UAbilityTask_PlayMontageAndWait;
@@ -14,12 +14,12 @@ class UAbilityTask_WaitGameplayEvent;
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASAbility_BasicAttack : public USayuGameplayAbility
+class PROJECTGAS_API USayuAbility_BasicAttack : public USayuGameplayAbility
 {
 	GENERATED_BODY()
 	
 public:
-	UProjectGASAbility_BasicAttack();
+	USayuAbility_BasicAttack();
 
 protected:
 	// ActivateAbility : 어빌리티가 실제로 "발동"될 때 호출되는 함수

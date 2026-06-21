@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystem/Abilities/SayuGameplayAbility.h"
-#include "ProjectGASAbility_BuffSelf.generated.h"
+#include "SayuAbility_BuffSelf.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASAbility_BuffSelf : public USayuGameplayAbility
+class PROJECTGAS_API USayuAbility_BuffSelf : public USayuGameplayAbility
 {
 	GENERATED_BODY()
 	
 public:
-	UProjectGASAbility_BuffSelf();
+	USayuAbility_BuffSelf();
 
 protected:
 	// 버프로 사용할 Effect (에디터에서 GE_Buff_AttackUp 연결할 거예요)

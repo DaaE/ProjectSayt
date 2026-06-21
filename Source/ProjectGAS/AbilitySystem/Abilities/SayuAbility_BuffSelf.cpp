@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASAbility_BuffSelf.h"
+#include "SayuAbility_BuffSelf.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 
-UProjectGASAbility_BuffSelf::UProjectGASAbility_BuffSelf()
+USayuAbility_BuffSelf::USayuAbility_BuffSelf()
 {
 	FGameplayTagContainer NewTags;
 	NewTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Skill.Dash")));
@@ -14,7 +14,7 @@ UProjectGASAbility_BuffSelf::UProjectGASAbility_BuffSelf()
 	SetAssetTags(NewTags);
 }
 
-void UProjectGASAbility_BuffSelf::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
+void USayuAbility_BuffSelf::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)
 {
@@ -38,7 +38,7 @@ void UProjectGASAbility_BuffSelf::ActivateAbility(const FGameplayAbilitySpecHand
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
-void UProjectGASAbility_BuffSelf::EndAbility(const FGameplayAbilitySpecHandle Handle,
+void USayuAbility_BuffSelf::EndAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	bool bReplicateEndAbility, bool bWasCancelled)
 {
