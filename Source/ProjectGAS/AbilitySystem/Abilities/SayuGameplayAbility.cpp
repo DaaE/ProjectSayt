@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASGameplayAbility.h"
+#include "SayuGameplayAbility.h"
 
-UProjectGASGameplayAbility::UProjectGASGameplayAbility()
+USayuGameplayAbility::USayuGameplayAbility()
 {
 	// InstancingPolicy : 이 어빌리티가 발동될 때마다 새 인스턴스를 만들지,
 	// 캐릭터당 하나만 만들지를 결정해요.

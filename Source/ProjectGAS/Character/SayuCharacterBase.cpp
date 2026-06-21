@@ -3,7 +3,7 @@
 
 #include "SayuCharacterBase.h"
 #include "AbilitySystemComponent.h"
-#include "AbilitySystem/Abilities/ProjectGASGameplayAbility.h"
+#include "AbilitySystem/Abilities/SayuGameplayAbility.h"
 
 
 // Sets default values
@@ -68,7 +68,7 @@ void ASayuCharacterBase::GiveDefaultAbilities()
 		return;
 	}
 
-	for (TSubclassOf<UProjectGASGameplayAbility> AbilityClass : DefaultAbilities)
+	for (TSubclassOf<USayuGameplayAbility> AbilityClass : DefaultAbilities)
 	{
 		if (AbilityClass)
 		{

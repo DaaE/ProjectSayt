@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystem/Abilities/ProjectGASGameplayAbility.h"
+#include "AbilitySystem/Abilities/SayuGameplayAbility.h"
 #include "ProjectGASAbility_BuffSelf.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASAbility_BuffSelf : public UProjectGASGameplayAbility
+class PROJECTGAS_API UProjectGASAbility_BuffSelf : public USayuGameplayAbility
 {
 	GENERATED_BODY()
 	

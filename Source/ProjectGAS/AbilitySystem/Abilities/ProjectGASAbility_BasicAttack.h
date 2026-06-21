@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ProjectGASGameplayAbility.h"
+#include "SayuGameplayAbility.h"
 #include "ProjectGASAbility_BasicAttack.generated.h"
 
 class UAnimMontage;
@@ -14,7 +14,7 @@ class UAbilityTask_WaitGameplayEvent;
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASAbility_BasicAttack : public UProjectGASGameplayAbility
+class PROJECTGAS_API UProjectGASAbility_BasicAttack : public USayuGameplayAbility
 {
 	GENERATED_BODY()
 	

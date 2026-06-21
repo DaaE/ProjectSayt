@@ -18,7 +18,7 @@
 // #include 대신 쓰면 컴파일 속도가 빨라짐
 // C#에는 없는 개념 - C++에서는 헤더 include가 컴파일 시간에 직접 영향을 줌
 class UAbilitySystemComponent;
-class UProjectGASGameplayAbility;
+class USayuGameplayAbility;
 
 // 플레이어/적 등 GAS를 쓰는 모든 Character가 공유하는 베이스.
 // ASC 생성, 어빌리티 부여, 초기화 타이밍까지 여기서 전담한다.
@@ -56,7 +56,7 @@ protected:
 	// 캐릭터가 기본으로 보유할 어빌리티 목록
 	// 블루프린트에서 배열에 BP_Ability들을 등록할 거예요
 	UPROPERTY(EditDefaultsOnly, Category = "Abilities")
-	TArray<TSubclassOf<UProjectGASGameplayAbility>> DefaultAbilities;
+	TArray<TSubclassOf<USayuGameplayAbility>> DefaultAbilities;
 
 	// 게임 시작 시 위 목록을 실제로 ASC에 등록하는 함수
 	void GiveDefaultAbilities();
