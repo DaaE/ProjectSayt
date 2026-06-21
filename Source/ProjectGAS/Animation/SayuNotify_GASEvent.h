@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "ProjectGASNotify_GASEvent.generated.h"
+#include "SayuNotify_GASEvent.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASNotify_GASEvent : public UAnimNotify
+class PROJECTGAS_API USayuNotify_GASEvent : public UAnimNotify
 {
 	GENERATED_BODY()
 	

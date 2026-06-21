@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASNotify_GASEvent.h"
+#include "SayuNotify_GASEvent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 // SendGameplayEventToActor가 정의된 헤더
 
-void UProjectGASNotify_GASEvent::Notify(
+void USayuNotify_GASEvent::Notify(
 	USkeletalMeshComponent* MeshComp,
 	UAnimSequenceBase* Animation,
 	const FAnimNotifyEventReference& EventReference)
