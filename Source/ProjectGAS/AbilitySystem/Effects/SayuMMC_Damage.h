@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameplayModMagnitudeCalculation.h"
-#include "ProjectGASMMC_Damage.generated.h"
+#include "SayuMMC_Damage.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTGAS_API UProjectGASMMC_Damage : public UGameplayModMagnitudeCalculation
+class PROJECTGAS_API USayuMMC_Damage : public UGameplayModMagnitudeCalculation
 {
 	GENERATED_BODY()
 	
 public:
-	UProjectGASMMC_Damage();
+	USayuMMC_Damage();
 
 	// CalculateBaseMagnitude : 이 Effect가 적용될 때마다 호출되는 계산 함수
 	// 여기서 AttackPower를 읽어서 최종 데미지를 리턴함

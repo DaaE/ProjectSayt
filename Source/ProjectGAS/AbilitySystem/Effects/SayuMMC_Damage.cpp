@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASMMC_Damage.h"
+#include "SayuMMC_Damage.h"
 #include "../Attributes/SayuAttributeSet.h"
 
 
-UProjectGASMMC_Damage::UProjectGASMMC_Damage()
+USayuMMC_Damage::USayuMMC_Damage()
 {
 	// 가해자(Source)의 AttackPower를 캡처하겠다는 명세
 	AttackPowerDef = FGameplayEffectAttributeCaptureDefinition(
@@ -21,7 +21,7 @@ UProjectGASMMC_Damage::UProjectGASMMC_Damage()
 	// 이 배열에 등록해야 실제로 캡처가 작동함
 }
 
-float UProjectGASMMC_Damage::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
+float USayuMMC_Damage::CalculateBaseMagnitude_Implementation(const FGameplayEffectSpec& Spec) const
 {
 	float AttackPower = 0.f;
 
