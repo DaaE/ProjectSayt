@@ -49,13 +49,19 @@ public:
 	FGameplayAttributeData MaxMana;
 	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, MaxMana)
 	
-	UPROPERTY(BlueprintReadOnly, Category = "Combat",
-	ReplicatedUsing = OnRep_AttackPower)
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", ReplicatedUsing = OnRep_AttackPower)
 	FGameplayAttributeData AttackPower;
 	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, AttackPower)
 
 	UFUNCTION()
 	virtual void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Combat", ReplicatedUsing = OnRep_ComboCount)
+	FGameplayAttributeData ComboCount;
+	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, ComboCount)
+
+	UFUNCTION()
+	virtual void OnRep_ComboCount(const FGameplayAttributeData& OldComboCount);
 	
 	// === 리플리케이션 설정 ===
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -5,6 +5,9 @@ Intermediate/
 Saved/
 DerivedDataCache/
 
+# 대용량 외부 에셋 - 로컬에서만 사용, Git에는 포함하지 않음
+Content/ParagonAurora/
+
 # IDE
 .vs/
 .idea/

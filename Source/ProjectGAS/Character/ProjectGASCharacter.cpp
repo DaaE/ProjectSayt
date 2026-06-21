@@ -19,8 +19,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "AbilitySystem/Abilities/ProjectGASGameplayAbility.h"
-#include "AbilitySystem/Abilities/ProjectGASAbility_BasicAttack.h"
 #include "Blueprint/UserWidget.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
 // Sets default values
 AProjectGASCharacter::AProjectGASCharacter()
@@ -131,7 +131,21 @@ void AProjectGASCharacter::GiveDefaultAbilities()
 
 void AProjectGASCharacter::OnBasicAttackInput(const struct FInputActionValue& Value)
 {
-	if (AbilitySystemComponent)
+	if (!AbilitySystemComponent)
+	{
+		return;;
+	}
+	
+	const FGameplayTag LightAttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Attack.Light"));
+	
+	if (AbilitySystemComponent->HasMatchingGameplayTag(LightAttackTag))
+	{
+		// 어빌리티가 이미 활성 중 → 재발동 시도 안 함, 신호만 전달
+		FGameplayEventData EventData;
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
+			this, FGameplayTag::RequestGameplayTag(FName("Event.Combo.Input")), EventData);
+	}
+	else
 	{
 		FGameplayTagContainer TagContainer;
 		// FGameplayTagContainer : 태그를 "여러 개" 담는 컨테이너
