@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ProjectGASAttributeSet.h"
+#include "SayuAttributeSet.h"
 #include "Net/UnrealNetwork.h"
 // GetLifetimeReplicatedProps에서 쓰는 DOREPLIFETIME 매크로가 여기 있어요
 
-UProjectGASAttributeSet::UProjectGASAttributeSet()
+USayuAttributeSet::USayuAttributeSet()
 {
 	// 초기값 설정
 	// FGameplayAttributeData는 생성자에서 명시적으로 초기화 안 해도
@@ -23,7 +23,7 @@ UProjectGASAttributeSet::UProjectGASAttributeSet()
 	// 임시로 count 수치를 사용 이후 Tag stack api를 이용하는 방식으로 리펙토링 필요.
 }
 
-void UProjectGASAttributeSet::GetLifetimeReplicatedProps(
+void USayuAttributeSet::GetLifetimeReplicatedProps(
 	TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -35,55 +35,55 @@ void UProjectGASAttributeSet::GetLifetimeReplicatedProps(
 	// - REPNOTIFY_Always: 값이 같아도 항상 OnRep 콜백 호출
 	//   (GAS는 버프 적용/해제가 같은 값으로 끝나도 UI 갱신이 필요한 경우가 있어서
 	//    Always를 권장합니다)
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, Health,
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, Health,
 		COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, MaxHealth,
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, MaxHealth,
 		COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, Mana,
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, Mana,
 		COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, MaxMana,
-		COND_None, REPNOTIFY_Always);
-	
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, AttackPower,
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, MaxMana,
 		COND_None, REPNOTIFY_Always);
 	
-	DOREPLIFETIME_CONDITION_NOTIFY(UProjectGASAttributeSet, ComboCount,
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, AttackPower,
+		COND_None, REPNOTIFY_Always);
+	
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet, ComboCount,
 		COND_None, REPNOTIFY_Always);
 }
 
-void UProjectGASAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
+void USayuAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
 {
 	// GAS 전용 매크로. ASC에게 "이 Attribute가 리플리케이션으로 변경됐다"고
 	// 알려주는 역할. UI 바인딩이나 GameplayCue 트리거에 필요해요.
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, Health, OldHealth);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, Health, OldHealth);
 }
 
-void UProjectGASAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
+void USayuAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, MaxHealth, OldMaxHealth);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, MaxHealth, OldMaxHealth);
 }
 
-void UProjectGASAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana)
+void USayuAttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, Mana, OldMana);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, Mana, OldMana);
 }
 
-void UProjectGASAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
+void USayuAttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, MaxMana, OldMaxMana);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, MaxMana, OldMaxMana);
 }
 
-void UProjectGASAttributeSet::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
+void USayuAttributeSet::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, AttackPower, OldAttackPower);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, AttackPower, OldAttackPower);
 }
 
-void UProjectGASAttributeSet::OnRep_ComboCount(const FGameplayAttributeData& OldComboCount)
+void USayuAttributeSet::OnRep_ComboCount(const FGameplayAttributeData& OldComboCount)
 {
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UProjectGASAttributeSet, ComboCount, OldComboCount);
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet, ComboCount, OldComboCount);
 }
 
-void UProjectGASAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+void USayuAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 	

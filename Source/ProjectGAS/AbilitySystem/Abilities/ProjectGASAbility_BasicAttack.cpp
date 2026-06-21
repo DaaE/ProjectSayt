@@ -5,7 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "GameplayTagsManager.h"
-#include "../Attributes/ProjectGASAttributeSet.h"
+#include "../Attributes/SayuAttributeSet.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 

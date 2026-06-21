@@ -2,14 +2,14 @@
 
 
 #include "ProjectGASMMC_Damage.h"
-#include "../Attributes/ProjectGASAttributeSet.h"
+#include "../Attributes/SayuAttributeSet.h"
 
 
 UProjectGASMMC_Damage::UProjectGASMMC_Damage()
 {
 	// 가해자(Source)의 AttackPower를 캡처하겠다는 명세
 	AttackPowerDef = FGameplayEffectAttributeCaptureDefinition(
-		UProjectGASAttributeSet::GetAttackPowerAttribute(),
+		USayuAttributeSet::GetAttackPowerAttribute(),
 		EGameplayEffectAttributeCaptureSource::Source,
 		// Source : 이 Effect를 발생시킨 쪽 (공격자)
 		// Target이었다면 맞는 쪽(피격자) 기준이 됨

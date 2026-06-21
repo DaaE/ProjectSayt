@@ -3,7 +3,7 @@
 
 #include "ProjectGASCharacter.h"
 #include "AbilitySystemComponent.h"
-#include "../AbilitySystem/Attributes/ProjectGASAttributeSet.h"
+#include "../AbilitySystem/Attributes/SayuAttributeSet.h"
 
 // Enhanced Input 관련 헤더
 // 구현 파일(.cpp)에서는 전방 선언 대신 실제 헤더를 include 해야 함
@@ -68,7 +68,7 @@ AProjectGASCharacter::AProjectGASCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	// 회전 속도
 	
-	AttributeSet = CreateDefaultSubobject<UProjectGASAttributeSet>(TEXT("AttributeSet"));
+	AttributeSet = CreateDefaultSubobject<USayuAttributeSet>(TEXT("AttributeSet"));
 	// AttributeSet은 Actor 컴포넌트가 아니라 UObject라서 좀 특이하게
 	// CreateDefaultSubobject로 만들지만 SetupAttachment는 필요 없어요
 	// (계층 구조가 아니라 ASC 내부 데이터로 등록될 거라서)

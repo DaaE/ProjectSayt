@@ -3,7 +3,7 @@
 
 #include "ProjectGASHUDWidget.h"
 #include "AbilitySystemComponent.h"
-#include "../AbilitySystem/Attributes/ProjectGASAttributeSet.h"
+#include "../AbilitySystem/Attributes/SayuAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
@@ -24,8 +24,8 @@ void UProjectGASHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDelta
 				if (UAbilitySystemComponent* ASC =
 					ASCInterface->GetAbilitySystemComponent())
 				{
-					if (const UProjectGASAttributeSet* AttrSet =
-						ASC->GetSet<UProjectGASAttributeSet>())
+					if (const USayuAttributeSet* AttrSet =
+						ASC->GetSet<USayuAttributeSet>())
 						// GetSet<T> : ASC가 들고 있는 여러 AttributeSet 중에
 							// 원하는 타입을 찾아오는 함수
 					{

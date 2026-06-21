@@ -6,15 +6,15 @@
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include "ProjectGASAttributeSetMacros.h"
-#include "ProjectGASAttributeSet.generated.h"
+#include "SayuAttributeSet.generated.h"
 
 UCLASS()
-class PROJECTGAS_API UProjectGASAttributeSet : public UAttributeSet
+class PROJECTGAS_API USayuAttributeSet : public UAttributeSet
 {
 	GENERATED_BODY()
 	
 public:
-	UProjectGASAttributeSet();
+	USayuAttributeSet();
 	
 	// === 체력 ===
 	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_Health)
@@ -24,31 +24,31 @@ public:
 	// 따로 들고 있어요. 버프가 잠깐 올렸다가 풀리는 경우를 추적하려고요.
 	// Unity의 float health 한 줄과 가장 큰 차이점입니다.
 	
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, Health)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, Health)
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, MaxHealth)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, MaxHealth)
 	
 	// === 마나 ===
 	UPROPERTY(BlueprintReadOnly, Category = "Mana",	ReplicatedUsing = OnRep_Mana)
 	FGameplayAttributeData Mana;
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, Mana)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, Mana)
 
 	UPROPERTY(BlueprintReadOnly, Category = "Mana",	ReplicatedUsing = OnRep_MaxMana)
 	FGameplayAttributeData MaxMana;
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, MaxMana)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, MaxMana)
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", ReplicatedUsing = OnRep_AttackPower)
 	FGameplayAttributeData AttackPower;
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, AttackPower)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, AttackPower)
 
 	UFUNCTION()
 	virtual void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", ReplicatedUsing = OnRep_ComboCount)
 	FGameplayAttributeData ComboCount;
-	ATTRIBUTE_ACCESSORS(UProjectGASAttributeSet, ComboCount)
+	ATTRIBUTE_ACCESSORS(USayuAttributeSet, ComboCount)
 
 	UFUNCTION()
 	virtual void OnRep_ComboCount(const FGameplayAttributeData& OldComboCount);
