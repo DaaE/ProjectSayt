@@ -18,7 +18,7 @@
 // 이동 관련
 #include "GameFramework/CharacterMovementComponent.h"
 
-#include "AbilitySystem/Abilities/ProjectGASGameplayAbility.h"
+
 #include "Blueprint/UserWidget.h"
 #include "AbilitySystemBlueprintLibrary.h"
 
@@ -68,65 +68,10 @@ AProjectGASCharacter::AProjectGASCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	// 회전 속도
 	
-	// === GAS 컴포넌트 생성 ===
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(
-		TEXT("AbilitySystemComponent"));
-
-	AttributeSet = CreateDefaultSubobject<UProjectGASAttributeSet>(
-		TEXT("AttributeSet"));
+	AttributeSet = CreateDefaultSubobject<UProjectGASAttributeSet>(TEXT("AttributeSet"));
 	// AttributeSet은 Actor 컴포넌트가 아니라 UObject라서 좀 특이하게
 	// CreateDefaultSubobject로 만들지만 SetupAttachment는 필요 없어요
 	// (계층 구조가 아니라 ASC 내부 데이터로 등록될 거라서)
-}
-
-UAbilitySystemComponent* AProjectGASCharacter::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
-	// GAS 생태계 전체 (어빌리티, GameplayCue, UI 등)가
-	// 이 함수를 통해 ASC에 접근해요. 단순하지만 핵심적인 함수예요.
-}
-
-void AProjectGASCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-	
-	if (AbilitySystemComponent)
-	{
-		// ASC에게 "이 액터가 주인(Owner)이자 본체(Avatar)다" 라고 초기화
-		// Owner와 Avatar가 분리된 이유: PlayerState 방식에서는
-		// Owner = PlayerState(영속적), Avatar = Character(리스폰마다 교체)
-		// 가 다르기 때문이에요. 우리는 둘 다 Character로 동일하게 설정.
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-		
-		// ASC 초기화가 끝난 직후에 어빌리티 부여
-		// 순서가 중요해요 - InitAbilityActorInfo 전에 부여하면 동작 안 함
-		GiveDefaultAbilities();
-	}
-}
-
-void AProjectGASCharacter::GiveDefaultAbilities()
-{
-	if (!AbilitySystemComponent)
-	{
-		return;
-	}
-
-	for (TSubclassOf<UProjectGASGameplayAbility> AbilityClass : DefaultAbilities)
-	{
-		if (AbilityClass)
-		{
-			// FGameplayAbilitySpec : "이 어빌리티를 레벨 몇으로, 어떤 InputID로
-			// 캐릭터에게 부여할지"를 담는 명세 객체
-			// GameplayEffectSpec과 비슷한 패턴이에요 - GAS는 뭔가를
-			// "적용"하기 전에 항상 Spec(명세)을 먼저 만드는 일관된 패턴을 씁니다
-			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1);
-			// 1 = 어빌리티 레벨 (스킬 레벨업 시스템 만들 때 쓰일 값)
-
-			AbilitySystemComponent->GiveAbility(AbilitySpec);
-			// GiveAbility : 실제로 ASC의 "보유 어빌리티 목록"에 등록
-			// 이 시점부터 TryActivateAbility로 발동 가능해짐
-		}
-	}
 }
 
 void AProjectGASCharacter::OnBasicAttackInput(const struct FInputActionValue& Value)
