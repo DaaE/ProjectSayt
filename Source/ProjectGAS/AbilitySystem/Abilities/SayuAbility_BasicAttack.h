@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SayuGameplayAbility.h"
+#include "AbilitySystem/Tasks/AbilityTask_WeaponTrace.h"
 #include "SayuAbility_BasicAttack.generated.h"
 
 class UAnimMontage;
@@ -102,4 +103,29 @@ protected:
 	void PlayComboStep(int32 Index); // 몬타주 전환 + 콤보 증가를 전담하는 헬퍼
 
 	int32 CurrentComboIndex = -1; // 인스턴스가 콤보 생애 동안 직접 들고 있는 상태
+	
+	// 무기 트레이스에 쓸 소켓들 - 검 손잡이~검 끝
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<FName> WeaponTraceSockets =
+	{ "sword_base", "sword_mid", "sword_tip" };
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float WeaponTraceRadius = 6.f;
+	
+	// 무기 판정 구간 시작/종료 신호 리스너 (몬타주 NotifyState가 보냄)
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WaitTraceStartTask;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WaitTraceEndTask;
+	
+	// 실제 매 프레임 충돌 검사를 담당하는 Task
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WeaponTrace> WeaponTraceTask;
+	
+	UFUNCTION()
+	void OnTraceStartEvent(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnTraceEndEvent(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnWeaponHitActor(AActor* HitActor);
 };

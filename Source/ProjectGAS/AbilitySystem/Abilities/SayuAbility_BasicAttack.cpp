@@ -2,10 +2,10 @@
 
 
 #include "SayuAbility_BasicAttack.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "GameplayTagsManager.h"
-#include "../Attributes/SayuAttributeSet.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
@@ -67,6 +67,22 @@ void USayuAbility_BasicAttack::ActivateAbility(
 	WaitComboInputTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, ComboInputTag, nullptr, false, false);
 	WaitComboInputTask->EventReceived.AddDynamic(this, &USayuAbility_BasicAttack::OnComboInputEvent);
 	WaitComboInputTask->ReadyForActivation();
+	
+	// 무기 판정 시작 리스너 - 몬타주 NotifyState의 Begin에서 신호를 보냄
+	FGameplayTag TraceStartTag =
+		FGameplayTag::RequestGameplayTag(FName("Event.Combat.TraceStart"));
+	WaitTraceStartTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TraceStartTag, nullptr, false, false);
+	WaitTraceStartTask->EventReceived.AddDynamic(
+		this, &USayuAbility_BasicAttack::OnTraceStartEvent);
+	WaitTraceStartTask->ReadyForActivation();
+
+	// 무기 판정 종료 리스너 - 몬타주 NotifyState의 End에서 신호를 보냄
+	FGameplayTag TraceEndTag =
+		FGameplayTag::RequestGameplayTag(FName("Event.Combat.TraceEnd"));
+	WaitTraceEndTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, TraceEndTag, nullptr, false, false);
+	WaitTraceEndTask->EventReceived.AddDynamic(
+		this, &USayuAbility_BasicAttack::OnTraceEndEvent);
+	WaitTraceEndTask->ReadyForActivation();
 
 	// 1타 시작 - 이후 콤보 진행 전부 PlayComboStep이 전담
 	PlayComboStep(0);
@@ -93,6 +109,24 @@ void USayuAbility_BasicAttack::EndAbility(const FGameplayAbilitySpecHandle Handl
 	{
 		WaitComboInputTask->EndTask();
 		WaitComboInputTask = nullptr;
+	}
+	
+	if (WaitTraceStartTask)
+	{
+		WaitTraceStartTask->EndTask(); 
+		WaitTraceStartTask = nullptr;
+	}
+	
+	if (WaitTraceEndTask)
+	{
+		WaitTraceEndTask->EndTask(); 
+		WaitTraceEndTask = nullptr;
+	}
+	
+	if (WeaponTraceTask)
+	{
+		WeaponTraceTask->EndTask(); 
+		WeaponTraceTask = nullptr;
 	}
 	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
@@ -210,26 +244,6 @@ void USayuAbility_BasicAttack::PlayComboStep(int32 Index)
 		}
 	}
 
-	// MakeOutgoingGameplayEffectSpec : GameplayAbility 안에서 쓰는 헬퍼 함수
-	// Character에서 직접 했던 MakeEffectContext + MakeOutgoingSpec을
-	// 한 줄로 줄여줌 (어빌리티 컨텍스트 안에서는 더 간결하게 쓸 수 있음)
-	if (DamageEffectClass) // 배율 SetByCaller 연동은 여전히 미완성 (기존 메모 유지)
-	{
-		FGameplayEffectSpecHandle EffectSpec = MakeOutgoingGameplayEffectSpec(DamageEffectClass);
-		if (EffectSpec.IsValid())
-		{
-			// SetSetByCallerMagnitude : Effect 적용 시점에 외부에서
-			// 수치를 동적으로 주입하는 방법
-			// 우리 MMC는 AttackPower를 읽지만, 거기에 배율을 곱해주려면
-			// Spec 단계에서 추가 파라미터를 넘겨야 해요.
-			// 이건 다음 단계에서 MMC를 살짝 손볼 때 같이 설명할게요.
-			// 지금은 일단 Spec까지만 만들고 적용
-			ApplyGameplayEffectSpecToOwner(GetCurrentAbilitySpecHandle(), CurrentActorInfo, GetCurrentActivationInfo(), EffectSpec);
-			// ApplyGameplayEffectSpecToOwner : 자기 자신에게 적용
-			// (테스트 단계라 Self 적용. 나중에 적 타겟팅으로 바꿀 예정)
-		}
-	}
-
 	// === 애니메이션 재생 (Montage Task) ===
 	if (MontageTask) // 핵심: 전환 직전 이전 Task를 명시적으로 정리해야 false Interrupt 콜백을 막음
 	{
@@ -249,4 +263,63 @@ void USayuAbility_BasicAttack::PlayComboStep(int32 Index)
 	MontageTask->OnInterrupted.AddDynamic(this, &USayuAbility_BasicAttack::OnMontageInterrupted);
 	MontageTask->OnCancelled.AddDynamic(this, &USayuAbility_BasicAttack::OnMontageCancelled);
 	MontageTask->ReadyForActivation();
+}
+
+void USayuAbility_BasicAttack::OnTraceStartEvent(FGameplayEventData Payload)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] TraceStart - Task 생성"), CurrentComboIndex);
+	
+	// 혹시 직전 Task가 안 끝나고 남아있으면 정리 (안전장치)
+	if (WeaponTraceTask)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Combo %d] 이전 Task 정리"), CurrentComboIndex);
+		WeaponTraceTask->EndTask();
+	}
+
+	WeaponTraceTask = UAbilityTask_WeaponTrace::WeaponTrace(
+		this, WeaponTraceSockets, WeaponTraceRadius);
+	WeaponTraceTask->OnHit.AddDynamic(
+		this, &USayuAbility_BasicAttack::OnWeaponHitActor);
+	WeaponTraceTask->ReadyForActivation();
+}
+
+void USayuAbility_BasicAttack::OnTraceEndEvent(FGameplayEventData Payload)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] TraceEnd - Task 종료"), CurrentComboIndex);
+	
+	if (WeaponTraceTask)
+	{
+		WeaponTraceTask->EndTask();
+		WeaponTraceTask = nullptr;
+	}
+}
+
+void USayuAbility_BasicAttack::OnWeaponHitActor(AActor* HitActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] OnWeaponHitActor 호출: %s"),
+		CurrentComboIndex, HitActor ? *HitActor->GetName() : TEXT("null"));
+	
+	if (!HitActor || !DamageEffectClass)
+	{
+		return;
+	}
+
+	// 자기 자신이 아니라, 실제로 맞은 대상의 ASC를 찾아서 거기에 적용
+	UAbilitySystemComponent* TargetASC =
+		UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+	if (!TargetASC)
+	{
+		return;
+	}
+
+	FGameplayEffectSpecHandle EffectSpec =
+		MakeOutgoingGameplayEffectSpec(DamageEffectClass);
+	if (EffectSpec.IsValid())
+	{
+		// ApplyGameplayEffectSpecToTarget : ToOwner와 달리, 지정한
+		// 다른 ASC(여기선 맞은 대상)에게 이펙트를 적용함
+		GetAbilitySystemComponentFromActorInfo()
+			->ApplyGameplayEffectSpecToTarget(
+				*EffectSpec.Data.Get(), TargetASC);
+	}
 }

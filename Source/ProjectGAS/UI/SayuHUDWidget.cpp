@@ -3,9 +3,7 @@
 
 #include "SayuHUDWidget.h"
 #include "AbilitySystemComponent.h"
-#include "../AbilitySystem/Attributes/SayuAttributeSet.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/Character.h"
+#include "../AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
 #include "AbilitySystemInterface.h"
 
 void USayuHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -24,8 +22,8 @@ void USayuHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				if (UAbilitySystemComponent* ASC =
 					ASCInterface->GetAbilitySystemComponent())
 				{
-					if (const USayuAttributeSet* AttrSet =
-						ASC->GetSet<USayuAttributeSet>())
+					if (const USayuAttributeSet_Combat* AttrSet =
+						ASC->GetSet<USayuAttributeSet_Combat>())
 						// GetSet<T> : ASC가 들고 있는 여러 AttributeSet 중에
 							// 원하는 타입을 찾아오는 함수
 					{

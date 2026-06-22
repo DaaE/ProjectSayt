@@ -1,0 +1,91 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "SayuAttributeSet_Combat.h"
+#include "Net/UnrealNetwork.h"
+#include "GameplayEffectExtension.h"	// 전방클래스 선언만으로는 내부 멤버에 접근할 수 없다.
+
+USayuAttributeSet_Combat::USayuAttributeSet_Combat()
+{
+	InitHealth(100.f);
+	InitMaxHealth(100.f);
+	InitMana(50.f);
+	InitMaxMana(50.f);
+	InitAttackPower(10.f);
+	InitDefense(0.f);
+	InitComboCount(0.f);
+}
+
+void USayuAttributeSet_Combat::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, MaxHealth, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, Mana, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, MaxMana, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, AttackPower, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, Defense, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USayuAttributeSet_Combat, ComboCount, COND_None, REPNOTIFY_Always);
+}
+
+void USayuAttributeSet_Combat::OnRep_Health(const FGameplayAttributeData& OldHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, Health, OldHealth);
+}
+
+void USayuAttributeSet_Combat::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, MaxHealth, OldMaxHealth);
+}
+
+void USayuAttributeSet_Combat::OnRep_Mana(const FGameplayAttributeData& OldMana)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, Mana, OldMana);
+}
+
+void USayuAttributeSet_Combat::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, MaxMana, OldMaxMana);
+}
+
+void USayuAttributeSet_Combat::OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, AttackPower, OldAttackPower);
+}
+
+void USayuAttributeSet_Combat::OnRep_Defense(const FGameplayAttributeData& OldDefense)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, Defense, OldDefense);
+}
+
+void USayuAttributeSet_Combat::OnRep_ComboCount(const FGameplayAttributeData& OldComboCount)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USayuAttributeSet_Combat, ComboCount, OldComboCount);
+}
+
+void USayuAttributeSet_Combat::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
+{
+	Super::PreAttributeChange(Attribute, NewValue);
+
+	if (Attribute == GetHealthAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	}
+	else if (Attribute == GetManaAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
+	}
+}
+
+void USayuAttributeSet_Combat::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+	Super::PostGameplayEffectExecute(Data);
+
+	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s Health changed: %.1f / %.1f"),
+			*GetOwningActor()->GetName(), GetHealth(), GetMaxHealth());
+		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+	}
+}

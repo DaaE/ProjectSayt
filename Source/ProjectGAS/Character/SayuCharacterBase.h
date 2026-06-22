@@ -13,12 +13,14 @@
 // UE 리플렉션 시스템이 자동 생성하는 코드를 포함
 // 반드시 마지막 #include 여야 함 - 순서 틀리면 컴파일 오류
 
+
 // 전방 선언 (Forward Declaration)
 // 헤더에서 포인터로만 쓸 클래스는 전방 선언으로 처리
 // #include 대신 쓰면 컴파일 속도가 빨라짐
 // C#에는 없는 개념 - C++에서는 헤더 include가 컴파일 시간에 직접 영향을 줌
 class UAbilitySystemComponent;
 class USayuGameplayAbility;
+class USayuAttributeSet_Combat;
 
 // 플레이어/적 등 GAS를 쓰는 모든 Character가 공유하는 베이스.
 // ASC 생성, 어빌리티 부여, 초기화 타이밍까지 여기서 전담한다.
@@ -39,6 +41,8 @@ public:
 	// Sets default values for this character's properties
 	ASayuCharacterBase();
 	
+	virtual void Tick(float DeltaTime) override;
+	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 protected:
@@ -52,6 +56,10 @@ protected:
 	// === GAS 컴포넌트 추가 ===
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	
+	// 추가 - 플레이어/NPC 공통으로 쓰는 전투 속성 (합성 방식)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
+	TObjectPtr<USayuAttributeSet_Combat> CombatAttributeSet;
 
 	// 캐릭터가 기본으로 보유할 어빌리티 목록
 	// 블루프린트에서 배열에 BP_Ability들을 등록할 거예요
@@ -60,6 +68,10 @@ protected:
 
 	// 게임 시작 시 위 목록을 실제로 ASC에 등록하는 함수
 	void GiveDefaultAbilities();
+	
+	// 임시 디버그용 - Phase 7에서 정식 토글 시스템으로 대체될 예정
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	bool bShowCollisionDebug = false;
 
 private:
 	void InitializeAbilitySystem();

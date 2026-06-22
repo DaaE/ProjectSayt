@@ -16,7 +16,6 @@ class USpringArmComponent;   // 카메라 붐 (카메라와 캐릭터 사이 거
 class UCameraComponent;      // 실제 카메라
 class UInputMappingContext;  // Enhanced Input - 키 배열표
 class UInputAction;          // Enhanced Input - 개별 입력 행동
-class USayuAttributeSet;
 
 UCLASS()
 
@@ -61,6 +60,7 @@ protected:
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 	// EditAnywhere : 에디터에서 읽기/쓰기 모두 가능 (에셋 드래그앤드롭 가능)
 	
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 
@@ -70,9 +70,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> JumpAction;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
-	TObjectPtr<USayuAttributeSet> AttributeSet;
-
+	
 	// Enhanced Input용 어빌리티 발동 액션
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> BasicAttackAction;

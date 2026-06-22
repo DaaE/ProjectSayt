@@ -4,6 +4,8 @@
 #include "SayuCharacterBase.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/Abilities/SayuGameplayAbility.h"
+#include "AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
+#include "Components/CapsuleComponent.h"
 
 
 // Sets default values
@@ -13,6 +15,13 @@ ASayuCharacterBase::ASayuCharacterBase()
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	// AttributeSet은 여기서 안 만든다 — 자식마다 구체 타입이
 	// 다르므로(플레이어용/적용) 각 자식 생성자에서 만든다.
+	
+	// 모든 캐릭터(플레이어/NPC)가 공통으로 필요하니 여기서 한 번에 생성
+	CombatAttributeSet = CreateDefaultSubobject<USayuAttributeSet_Combat>(
+		TEXT("CombatAttributeSet"));
+	
+	// 생성자에 추가 - 틱이 꺼져있으면 디버그도 안 그려지니 켜둠
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 // GAS 생태계 전체 (어빌리티, GameplayCue, UI 등)가
@@ -84,4 +93,23 @@ void ASayuCharacterBase::GiveDefaultAbilities()
 			// 이 시점부터 TryActivateAbility로 발동 가능해짐
 		}
 	}
+}
+
+void ASayuCharacterBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+#if !UE_BUILD_SHIPPING
+	if (bShowCollisionDebug)
+	{
+		if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+		{
+			DrawDebugCapsule(GetWorld(), Capsule->GetComponentLocation(),
+				Capsule->GetScaledCapsuleHalfHeight(),
+				Capsule->GetScaledCapsuleRadius(),
+				Capsule->GetComponentQuat(),
+				FColor::Green, false, -1.f, 0, 1.5f);
+		}
+	}
+#endif
 }
