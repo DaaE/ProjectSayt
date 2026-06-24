@@ -22,6 +22,11 @@
 #include "Blueprint/UserWidget.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
+#include "Items/SayuItemDefinition.h"
+#include "Items/SayuItemFragment.h"
+#include "items/SayuItemInstance.h"
+#include "Inventory/SayuInventoryComponent.h"
+
 
 // Sets default values
 ASayuCharacter::ASayuCharacter()
@@ -68,6 +73,9 @@ ASayuCharacter::ASayuCharacter()
 	// 이동 방향으로 캐릭터가 자동으로 회전 (RPG 스타일)
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	// 회전 속도
+	
+	// SayuCharacter.cpp (생성자에 추가 — ASC/AttributeSet 만들 때와 같은 패턴)
+	InventoryComponent = CreateDefaultSubobject<USayuInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void ASayuCharacter::OnBasicAttackInput(const struct FInputActionValue& Value)
@@ -142,6 +150,33 @@ void ASayuCharacter::OnDebugDamageInput(const struct FInputActionValue& Value)
 	}
 }
 
+void ASayuCharacter::DebugEquipTestItem()
+{
+	if (!DebugTestItem)
+	{
+		return;
+	}
+
+	for (const TObjectPtr<USayuItemFragment>& Fragment : DebugTestItem->Fragments)
+	{
+		if (Fragment)
+		{
+			Fragment->OnEquipped(this);
+		}
+	}
+	
+	// Phase 5 임시 디버그 — 인벤토리 추가 테스트.
+	// 정식 루팅/UI 플로우가 생기면 이 디버그 경로는 제거할 예정 (Phase 11 정리 대상).
+	if (InventoryComponent)
+	{
+		if (USayuItemInstance* NewInstance = USayuItemInstance::CreateInstance(this, DebugTestItem))
+		{
+			InventoryComponent->TryAddInstance(NewInstance);
+			InventoryComponent->DebugPrintGrid();
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void ASayuCharacter::BeginPlay()
 {
@@ -209,7 +244,7 @@ void ASayuCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 			this, &ACharacter::Jump);
 		// Jump는 ACharacter에 이미 구현되어 있어서 직접 바인딩 가능
 
-		EIC->BindAction(JumpAction, ETriggerEvent::Completed,
+		EIC->BindAction(JumpAction, ETriggerEvent::Started,
 			this, &ACharacter::StopJumping);
 		
 		EIC->BindAction(BasicAttackAction, ETriggerEvent::Started,
@@ -227,6 +262,9 @@ void ASayuCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		// save load 디버그용 확인 후 삭제
 		EIC->BindAction(DebugDamageAction, ETriggerEvent::Started,
 			this, &ASayuCharacter::OnDebugDamageInput);
+		
+		EIC->BindAction(IA_DebugEquip, ETriggerEvent::Started,
+			this, &ASayuCharacter::DebugEquipTestItem);
 	}
 }
 

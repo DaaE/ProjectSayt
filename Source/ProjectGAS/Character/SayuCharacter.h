@@ -16,6 +16,9 @@ class USpringArmComponent;   // 카메라 붐 (카메라와 캐릭터 사이 거
 class UCameraComponent;      // 실제 카메라
 class UInputMappingContext;  // Enhanced Input - 키 배열표
 class UInputAction;          // Enhanced Input - 개별 입력 행동
+class USayuItemDefinition;
+class USayuInventoryComponent;
+
 
 UCLASS()
 
@@ -99,7 +102,22 @@ protected:
 
 	void OnDebugDamageInput(const struct FInputActionValue& Value);
 	////////////////////////////////////////
+
+	// Phase 5 임시 디버그용 — Fragment 시스템 자체를 테스트하기 위한 입력 트리거.
+	// 정식 인벤토리 UI가 생기면 이 디버그 경로는 제거할 예정 (Phase 11 정리 대상).
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	TObjectPtr<UInputAction> IA_DebugEquip;
+
+	// 테스트용으로 장착해볼 아이템. 에디터에서 DA_Item_Test를 직접 지정.
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	TObjectPtr<USayuItemDefinition> DebugTestItem;
+
+	void DebugEquipTestItem();
 	
+	//Inventory
+	UPROPERTY(VisibleAnywhere, Category = "Sayu|Inventory")
+	TObjectPtr<USayuInventoryComponent> InventoryComponent;
+		
 	// 임시 UI 디버그용
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUserWidget> HUDWidgetClass;
