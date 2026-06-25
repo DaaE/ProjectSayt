@@ -6,6 +6,7 @@
 #include "CommonActivatableWidget.h"
 #include "SayuInventoryWidget.generated.h"
 
+class USizeBox;
 class UCanvasPanel;
 class UUniformGridPanel;
 class USayuInventoryItemWidget;
@@ -36,6 +37,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Sayu|Inventory")
 	TSubclassOf<USayuInventoryItemWidget> ItemWidgetClass;
 
+	//grid의 크기를 정함.
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<USizeBox> SizeContainer;
+	
 	// 디자이너에서 두 레이어가 정확히 겹치게 배치(Overlay 등으로) 필요.
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UUniformGridPanel> GridPanel;

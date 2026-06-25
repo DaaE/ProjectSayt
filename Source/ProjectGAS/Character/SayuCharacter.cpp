@@ -283,6 +283,9 @@ void ASayuCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		
 		EIC->BindAction(IA_DebugEquip, ETriggerEvent::Started,
 			this, &ASayuCharacter::DebugEquipTestItem);
+		
+		EIC->BindAction(IA_DebugToggleInventory, ETriggerEvent::Started,
+			this, &ASayuCharacter::DebugToggleInventory);
 	}
 }
 
