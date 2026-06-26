@@ -39,7 +39,7 @@ public:
 
 	// 지정 위치에 놓을 수 있는지 판정만 함 (실제로 놓지 않음).
 	// 풋프린트 전체가 비어있거나, 동일한 스택 가능 아이템과 정확히 겹치면 true.
-	bool CanPlaceItemAt(USayuItemDefinition* ItemDef, FIntPoint TopLeft) const;
+	bool CanPlaceItemAt(USayuItemDefinition* ItemDef, FIntPoint TopLeft, USayuItemInstance* IgnoreInstance = nullptr) const;
 
 	// 지정 위치에 Instance 배치 시도 (드래그&드롭처럼 좌표가 확정된 경우용).
 	// 호환되는 기존 스택과 정확히 겹치면 병합, 비어있으면 새로 배치.
@@ -80,7 +80,11 @@ private:
 	// 풋프린트 안의 점유 상태를 읽기만 함 (읽기 전용 헬퍼라 const).
 	// 풋프린트 전체가 일관되면(전부 비었거나 전부 같은 인스턴스) true를 반환하고
 	// OutOccupant에 그 결과를 채움(nullptr = 비어있음). 섞여 있으면 false.
-	bool GetUniformFootprintOccupant(FIntPoint TopLeft, FIntPoint Size, USayuItemInstance*& OutOccupant) const;
+	bool GetUniformFootprintOccupant(FIntPoint TopLeft, FIntPoint Size, USayuItemInstance*& OutOccupant, USayuItemInstance* IgnoreInstance = nullptr) const;
+	
+	// 특정 칸의 "사실상" 점유자. IgnoreInstance와 같으면 빈 칸(nullptr)인 것처럼 취급 —
+	// 드래그 호버 판정에서 "자기 자신이 차지한 칸"을 무시하기 위한 용도.
+	USayuItemInstance* GetEffectiveOccupant(int32 X, int32 Y, USayuItemInstance* IgnoreInstance) const;
 	
 	// 각 셀을 점유 중인 인스턴스. nullptr이면 빈 칸. 크기 = GridWidth * GridHeight.
 	// (Entries가 이미 UPROPERTY로 소유권을 갖고 있어서, 이 배열은 GC 추적이

@@ -26,15 +26,15 @@ void USayuInventoryComponent::BeginPlay()
 	Entries.Reserve(GridWidth * GridHeight);
 }
 
-bool USayuInventoryComponent::GetUniformFootprintOccupant(FIntPoint TopLeft, FIntPoint Size, USayuItemInstance*& OutOccupant) const
+bool USayuInventoryComponent::GetUniformFootprintOccupant(FIntPoint TopLeft, FIntPoint Size, USayuItemInstance*& OutOccupant, USayuItemInstance* IgnoreInstance) const
 {
-	OutOccupant = CellOccupancy[TopLeft.Y * GridWidth + TopLeft.X];
+	OutOccupant = GetEffectiveOccupant(TopLeft.X, TopLeft.Y, IgnoreInstance);
 
 	for (int32 Y = TopLeft.Y; Y < TopLeft.Y + Size.Y; ++Y)
 	{
 		for (int32 X = TopLeft.X; X < TopLeft.X + Size.X; ++X)
 		{
-			if (CellOccupancy[Y * GridWidth + X] != OutOccupant)
+			if (GetEffectiveOccupant(X, Y, IgnoreInstance) != OutOccupant)
 			{
 				return false; // 풋프린트 안에 섞인 점유 상태 존재
 			}
@@ -44,7 +44,13 @@ bool USayuInventoryComponent::GetUniformFootprintOccupant(FIntPoint TopLeft, FIn
 	return true;
 }
 
-bool USayuInventoryComponent::CanPlaceItemAt(USayuItemDefinition* ItemDef, FIntPoint TopLeft) const
+USayuItemInstance* USayuInventoryComponent::GetEffectiveOccupant(int32 X, int32 Y, USayuItemInstance* IgnoreInstance) const
+{
+	USayuItemInstance* Cell = CellOccupancy[Y * GridWidth + X];
+	return (Cell == IgnoreInstance) ? nullptr : Cell;
+}
+
+bool USayuInventoryComponent::CanPlaceItemAt(USayuItemDefinition* ItemDef, FIntPoint TopLeft, USayuItemInstance* IgnoreInstance) const
 {
 	if (!ItemDef)
 	{
@@ -61,7 +67,7 @@ bool USayuInventoryComponent::CanPlaceItemAt(USayuItemDefinition* ItemDef, FIntP
 	}
 	
 	USayuItemInstance* Occupant = nullptr;
-	if (!GetUniformFootprintOccupant(TopLeft, Size, Occupant))
+	if (!GetUniformFootprintOccupant(TopLeft, Size, Occupant, IgnoreInstance))
 	{
 		return false; // 풋프린트 안에 점유 상태가 섞여 있음
 	}

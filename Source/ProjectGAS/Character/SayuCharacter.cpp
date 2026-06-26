@@ -180,10 +180,18 @@ void ASayuCharacter::DebugEquipTestItem()
 
 void ASayuCharacter::DebugToggleInventory()
 {
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	
 	if (ActiveInventoryWidget)
 	{
 		ActiveInventoryWidget->RemoveFromParent();
 		ActiveInventoryWidget = nullptr;
+		
+		if (PC)
+		{
+			PC->bShowMouseCursor = false;
+			PC->SetInputMode(FInputModeGameOnly());
+		}
 		return;
 	}
 
@@ -192,6 +200,18 @@ void ASayuCharacter::DebugToggleInventory()
 		ActiveInventoryWidget = CreateWidget<USayuInventoryWidget>(GetWorld(), InventoryWidgetClass);
 		ActiveInventoryWidget->SetInventoryComponent(InventoryComponent);
 		ActiveInventoryWidget->AddToViewport();
+		
+		if (PC)
+		{
+			PC->bShowMouseCursor = true;
+
+			// GameAndUI: UI가 안 쓰는 입력(=토글 키)은 그대로 게임에 전달됨 —
+			// 그래서 인벤토리 연 채로도 "I" 키로 다시 닫을 수 있음.
+			FInputModeGameAndUI InputMode;
+			InputMode.SetWidgetToFocus(ActiveInventoryWidget->TakeWidget());
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PC->SetInputMode(InputMode);
+		}
 	}
 }
 
@@ -317,6 +337,12 @@ void ASayuCharacter::Move(const FInputActionValue& Value)
 
 void ASayuCharacter::Look(const FInputActionValue& Value)
 {
+	// 인벤토리 열려있는 동안 시점 회전 정지 — 마우스가 이제 UI 조작용으로 쓰이니까.
+	if (ActiveInventoryWidget)
+	{
+		return;
+	}
+	
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)

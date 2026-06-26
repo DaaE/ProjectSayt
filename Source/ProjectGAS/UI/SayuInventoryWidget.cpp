@@ -62,6 +62,9 @@ void USayuInventoryWidget::BuildGrid()
 				GridSlot->SetHorizontalAlignment(HAlign_Fill);
 				GridSlot->SetVerticalAlignment(VAlign_Fill);
 			}
+			
+			NewSlot->SetGridPosition(FIntPoint(X, Y));
+			NewSlot->SetOwningInventoryWidget(this);
 
 			SlotWidgets[Y * Width + X] = NewSlot;
 		}
@@ -91,6 +94,7 @@ void USayuInventoryWidget::RefreshItems()
 		}
 
 		NewItemWidget->SetItemInstance(Entry.Instance);
+		NewItemWidget->SetGridPosition(Entry.TopLeft);
 
 		if (UCanvasPanelSlot* CanvasSlot = ItemCanvas->AddChildToCanvas(NewItemWidget))
 		{
@@ -99,4 +103,30 @@ void USayuInventoryWidget::RefreshItems()
 			CanvasSlot->SetSize(FVector2D(Size.X * CellSize, Size.Y * CellSize));
 		}
 	}
+}
+
+void USayuInventoryWidget::HandleItemDropped(USayuItemInstance* Instance, FIntPoint NewTopLeft, FIntPoint OriginalTopLeft)
+{
+	if (!Instance || !InventoryComponent)
+	{
+		return;
+	}
+
+	USayuItemDefinition* ItemDef = Instance->ItemDefinition;
+
+	// 일단 원래 자리에서 빼고 검사 — 자기 자신의 옛 칸이 "이미 점유 중"으로 잡혀서
+	// 근처로 이동하는 것 자체가 막히는 걸 방지.
+	InventoryComponent->RemoveItem(Instance);
+
+	if (InventoryComponent->CanPlaceItemAt(ItemDef, NewTopLeft, nullptr))
+	{
+		InventoryComponent->TryAddInstanceAt(Instance, NewTopLeft);
+	}
+	else
+	{
+		// 배치 불가 — 원래 자리로 롤백.
+		InventoryComponent->TryAddInstanceAt(Instance, OriginalTopLeft);
+	}
+
+	RefreshItems();
 }

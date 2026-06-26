@@ -12,7 +12,7 @@ class UUniformGridPanel;
 class USayuInventoryItemWidget;
 class USayuInventorySlotWidget;
 class USayuInventoryComponent;
-
+class USayuItemInstance;
 
 /**
  * 
@@ -24,6 +24,12 @@ class PROJECTGAS_API USayuInventoryWidget : public UCommonActivatableWidget
 	
 public:
 	void SetInventoryComponent(USayuInventoryComponent* InInventoryComponent);
+	
+	// Slot/Item 위젯이 모델을 들여다보기 위한 읽기 전용 통로.
+	USayuInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	// 드롭 완료 시점 — 실제 모델 변경(이동/롤백) + 화면 갱신을 한 곳에서 처리.
+	void HandleItemDropped(USayuItemInstance* Instance, FIntPoint NewTopLeft, FIntPoint OriginalTopLeft);
 	
 protected:
 	// 한 칸의 픽셀 크기. 배경 그리드(UniformGridPanel)와 아이콘 오버레이(CanvasPanel)
