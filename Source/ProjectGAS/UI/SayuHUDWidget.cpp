@@ -5,13 +5,30 @@
 #include "AbilitySystemComponent.h"
 #include "../AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
 #include "AbilitySystemInterface.h"
+#include "Messages/SayuCombatMessages.h"
 
-void USayuHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void USayuHUDWidget::NativeOnInitialized()
 {
-	Super::NativeTick(MyGeometry, InDeltaTime);
+	Super::NativeOnInitialized();
+	
+	// 위젯 생성 시점엔 아직 데미지 이벤트가 없었으니 최초 1회는 직접 읽어서 초기화
+	SyncInitialHealthFromASC();
+		
+	DamageListenerHandle = UGameplayMessageSubsystem::Get(this).RegisterListener(
+		TAG_Message_Combat_Damage_Dealt, this, &USayuHUDWidget::OnDamageMessage);
+}
 
-	// 매 프레임 플레이어 캐릭터의 ASC에서 값을 직접 읽어옴
-	// (지금은 가장 단순한 방식. 나중에 델리게이트로 이벤트 기반으로 바꿀 거예요)
+void USayuHUDWidget::NativeDestruct()
+{
+	// 위젯이 사라질 때 리스너 해제 필수 - 안 하면 죽은 위젯을 향한 댕글링 콜백이 남음
+	DamageListenerHandle.Unregister();
+	
+	Super::NativeDestruct();
+}
+
+void USayuHUDWidget::SyncInitialHealthFromASC()
+{
+	
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		if (APawn* Pawn = PC->GetPawn())
@@ -34,4 +51,17 @@ void USayuHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 		}
 	}
+}
+
+void USayuHUDWidget::OnDamageMessage(FGameplayTag Channel, const FSayuDamageMessage& Message)
+{
+	// 채널은 전역이라 모든 액터의 데미지 이벤트가 다 들어옵니다.
+	// 내 캐릭터가 맞은 경우만 골라서 반응해야 해요 - 안 하면 npc가 맞아도 내 HUD가 깎임
+	if (Message.Target != GetOwningPlayerPawn())
+	{
+		return;
+	}
+	
+	CurrentHealth = Message.NewHealth;
+	MaxHealth = Message.MaxHealth;
 }

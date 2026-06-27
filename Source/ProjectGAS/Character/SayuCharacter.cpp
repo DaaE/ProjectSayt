@@ -142,12 +142,22 @@ void ASayuCharacter::OnQuickLoadInput(const FInputActionValue& Value)
 
 void ASayuCharacter::OnDebugDamageInput(const struct FInputActionValue& Value)
 {
-	if (CombatAttributeSet)
+	// InitHealth() 직접 호출은 GameplayEffect 파이프라인을 안 거쳐서
+	// PostGameplayEffectExecute(=GMS Broadcast)가 안 탑니다.
+	// 그래서 실제 GameplayEffect를 자기 자신에게 적용하는 방식으로 교체했어요.
+	if (AbilitySystemComponent && DebugSelfDamageEffectClass)
 	{
-		// Save/Load 검증용 - 20씩 깎기. 실제 전투 시스템 아님.
-		const float NewHealth = FMath::Max(0.f, CombatAttributeSet->GetHealth() - 20.f);
-		CombatAttributeSet->InitHealth(NewHealth);
-		UE_LOG(LogTemp, Warning, TEXT("[Debug] Health -20 -> %.1f"), NewHealth);
+		FGameplayEffectContextHandle Context = AbilitySystemComponent->MakeEffectContext();
+		Context.AddSourceObject(this);
+		
+		const FGameplayEffectSpecHandle Spec =
+			AbilitySystemComponent->MakeOutgoingSpec(DebugSelfDamageEffectClass, 1.f, Context);
+		
+		if (Spec.IsValid())
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+			UE_LOG(LogTemp, Warning, TEXT("[Debug] Self-damage GE applied"));
+		}
 	}
 }
 

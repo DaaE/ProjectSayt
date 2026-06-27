@@ -12,6 +12,7 @@
 // 반드시 마지막 #include 여야 함 - 순서 틀리면 컴파일 오류
 
 
+class UGameplayEffect;
 class USayuInventoryWidget;
 class USpringArmComponent;   // 카메라 붐 (카메라와 캐릭터 사이 거리 조절)
 class UCameraComponent;      // 실제 카메라
@@ -101,6 +102,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> DebugDamageAction;
 
+	// Phase 6 GMS 테스트용 - BasicAttack의 DamageEffectClass와 같은 BP 에셋을 지정하면 됨
+	UPROPERTY(EditDefaultsOnly, Category = "Debug")
+	TSubclassOf<UGameplayEffect> DebugSelfDamageEffectClass;
+	
 	void OnDebugDamageInput(const struct FInputActionValue& Value);
 	////////////////////////////////////////
 
