@@ -22,7 +22,8 @@ public class ProjectGAS : ModuleRules
 			"GameplayTasks",		// GAS AbilityTask
 			"UMG",					// UI
 			"CommonUI",				// Common UI
-			"Niagara"
+			"Niagara",
+			"GameplayMessageRuntime"	// GMS (Phase 6) - 이벤트 버스
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
