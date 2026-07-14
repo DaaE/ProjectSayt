@@ -11,6 +11,7 @@ Content/ParagonAurora/
 # IDE
 .vs/
 .idea/
+Plugins/Developer/RiderLink/
 *.VC.db
 *.VC.opendb
 *.sln
