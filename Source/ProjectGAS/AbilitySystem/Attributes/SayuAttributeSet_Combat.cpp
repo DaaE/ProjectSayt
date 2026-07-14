@@ -88,7 +88,18 @@ void USayuAttributeSet_Combat::PostGameplayEffectExecute(const FGameplayEffectMo
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s Health changed: %.1f / %.1f"),
 			*GetOwningActor()->GetName(), GetHealth(), GetMaxHealth());
-		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+			
+		// Base(원장) 교정: 막타 오버킬로 Base가 음수로 남는 것 방지.
+		// (PreAttributeChange는 Current 쪽 관문이라 Base까지 지켜주지 않음 —
+		//  Base가 -6.8로 남으면 이후 +10 힐이 3.2부터 시작하는 잠식 버그가 됨)
+		// 단, 실제로 교정이 필요할 때만 Set — 정상 타격마다 나가던
+		// 무변화 2차 방송(48->48)을 여기서 제거.
+		const float BaseHealth = GetOwningAbilitySystemComponent()->GetNumericAttributeBase(GetHealthAttribute());
+		const float ClampedBase = FMath::Clamp(BaseHealth, 0.f, GetMaxHealth());
+		if (!FMath::IsNearlyEqual(BaseHealth, ClampedBase))
+		{
+			SetHealth(ClampedBase);
+		}
 		
 		// === GMS Broadcast: 데미지 적용 사실을 다른 시스템들에게 알림 ===
 		// ExecCalc_Damage에서 Additive로 음수 적용했으니, 부호를 뒤집어야 "깎인 양"이 됩니다.
