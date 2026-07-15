@@ -20,9 +20,11 @@ void FSayuStyle::Initialize()
 	// 주의: 채움의 원색은 흰색 — 런타임 틴트(③)가 '곱해지는' 구조라
 	//       원색에 색이 있으면 틴트가 오염됨 (하얀 상자 사건의 곱셈, 이번엔 역방향 활용)
 	Instance->Set("Sayu.HealthBar", FSayuHealthBarStyle()
-		.SetBackgroundBrush(FSlateRoundedBoxBrush(FLinearColor(0.02f, 0.02f, 0.025f, 0.9f), 4.f))
+		.SetBackgroundBrush(FSlateRoundedBoxBrush(FLinearColor::White, 4.f))		// 배경도 '다음 줄 색' 틴트를 입어야 하므로 원색 흰색
 		.SetFillBrush(FSlateRoundedBoxBrush(FLinearColor::White, 4.f))
 		.SetGhostBrush(FSlateRoundedBoxBrush(FLinearColor(1.f, 0.45f, 0.1f, 0.6f), 4.f))
+		.SetDefaultFillTint(FLinearColor(0.7f, 0.1f, 0.1f))
+		.SetDefaultBackgroundTint(FLinearColor(0.02f, 0.02f, 0.025f, 0.9f))
 		.SetGhostDelay(0.25f)
 		.SetGhostDrainSpeed(1.2f));
 

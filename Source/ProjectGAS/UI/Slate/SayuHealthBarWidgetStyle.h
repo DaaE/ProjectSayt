@@ -46,6 +46,16 @@ struct PROJECTGAS_API FSayuHealthBarStyle : public FSlateWidgetStyle
 	UPROPERTY(EditAnywhere, Category = Appearance)
 	float GhostDrainSpeed = 1.2f;   // 잔상 감소 속도(초당 전체 대비 비율)
 	FSayuHealthBarStyle& SetGhostDrainSpeed(float InValue) { GhostDrainSpeed = InValue; return *this; }
+	
+	// 기본 틴트 — 런타임 세터(줄 색 스왑)가 덮어쓰기 전의 기본 룩.
+	// 색은 브러시 원색(흰색)에 곱셈으로 입힘 — 원색에 색이 있으면 곱셈이 오염되므로
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	FSlateColor DefaultFillTint = FLinearColor(0.7f, 0.1f, 0.1f);
+	FSayuHealthBarStyle& SetDefaultFillTint(const FSlateColor& InTint) { DefaultFillTint = InTint; return *this; }
+	
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	FSlateColor DefaultBackgroundTint = FLinearColor(0.02f, 0.02f, 0.025f, 0.9f);
+	FSayuHealthBarStyle& SetDefaultBackgroundTint(const FSlateColor& InTint) { DefaultBackgroundTint = InTint; return *this; }
 };
 
 // 에디터 에셋 컨테이너 — 이 스타일을 에디터에서 에셋으로 만들 수 있게 하는 포장.
