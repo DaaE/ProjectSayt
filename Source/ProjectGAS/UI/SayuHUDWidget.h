@@ -3,15 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "Blueprint/UserWidget.h"
-#include "GameFramework/GameplayMessageSubsystem.h"
 #include "SayuHUDWidget.generated.h"
 
-struct FSayuDamageMessage;
-/**
- * 
- */
+class UNativeWidgetHost;
+class SSayuHealthBar;
+
 UCLASS()
 class PROJECTGAS_API USayuHUDWidget : public UUserWidget
 {
@@ -24,21 +21,11 @@ protected:
 	// 위젯이 파괴될 때 호출 - 리스너 해제 필수
 	virtual void NativeDestruct() override;
 	
-	// GMS 콜백. RegisterListener가 기대하는 시그니처: (FGameplayTag, const T&)
-	void OnDamageMessage(FGameplayTag Channel, const FSayuDamageMessage& Message);
-	
-	// 위젯 생성 시점엔 아직 데미지 이벤트가 없었으니, 최초 1회는 직접 ASC를 읽어와야 함
-	void SyncInitialHealthFromASC();
-	
-	// BlueprintReadOnly : 블루프린트에서 이 값을 읽어서 TextBlock에 표시할 거예요
-	// C++ 에서는 값을 계산만 하고, 실제 화면 배치는 블루프린트가 담당
-	UPROPERTY(BlueprintReadOnly, Category = "Stats")
-	float CurrentHealth;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Stats")
-	float MaxHealth;
-	
+	// WBP_HUD 디자이너에서 동명(HealthBarHost) 위젯이 자동 주입됨 (BindWidget 계약)
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UNativeWidgetHost> HealthBarHost;
 	
 private:
-	FGameplayMessageListenerHandle DamageListenerHandle;
+	// UObject(HUD 위젯)가 Slate 위젯을 '소유'하는 표준 형태 — TSharedPtr 강참조
+	TSharedPtr<SSayuHealthBar> HealthBar;
 };
