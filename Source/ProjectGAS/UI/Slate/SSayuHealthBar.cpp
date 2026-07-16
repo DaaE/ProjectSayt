@@ -62,6 +62,7 @@ void SSayuHealthBar::BindToASC(UAbilitySystemComponent* InASC)
 	// [Pull] 구독 이전의 세계 따라잡기 — 1회
 	CurrentHealth = InASC->GetNumericAttribute(USayuAttributeSet_Combat::GetHealthAttribute());
 	MaxHealth     = InASC->GetNumericAttribute(USayuAttributeSet_Combat::GetMaxHealthAttribute());
+	GhostPercent  = GetHealthPercent();   // 잔상도 현재 지점에서 출발
 
 	Invalidate(EInvalidateWidgetReason::Paint);
 }
@@ -84,6 +85,13 @@ void SSayuHealthBar::UnbindFromASC()
 	HealthChangedHandle.Reset();
 	MaxHealthChangedHandle.Reset();
 	BoundASC.Reset();
+	
+	//재바인딩 시 이전 대상의 잔상 애니메이션이 이월되지 않도록
+	if (GhostTimerHandle.IsValid())
+	{
+		UnRegisterActiveTimer(GhostTimerHandle.ToSharedRef());
+		GhostTimerHandle.Reset();
+	}
 }
 
 void SSayuHealthBar::SetFillTint(const FSlateColor& InTint)
@@ -100,6 +108,7 @@ void SSayuHealthBar::HandleHealthChanged(const FOnAttributeChangeData& Data)
 {
 	if (Data.NewValue == Data.OldValue) { return; }   // 무변화 방송 필터
 	CurrentHealth = Data.NewValue;
+	SyncGhostToPercent();
 	Invalidate(EInvalidateWidgetReason::Paint);
 }
 
@@ -107,12 +116,61 @@ void SSayuHealthBar::HandleMaxHealthChanged(const FOnAttributeChangeData& Data)
 {
 	if (Data.NewValue == Data.OldValue) { return; }
 	MaxHealth = Data.NewValue;
+	SyncGhostToPercent();   // Max 변동도 '비율'을 움직이므로 같은 방침 적용
 	Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 float SSayuHealthBar::GetHealthPercent() const
 {
 	return (MaxHealth > 0.f) ? FMath::Clamp(CurrentHealth / MaxHealth, 0.f, 1.f) : 0.f;
+}
+
+void SSayuHealthBar::SyncGhostToPercent()
+{
+	const float NewPercent = GetHealthPercent();
+	if (NewPercent < GhostPercent)
+	{
+		StartGhostDrain();              // 감소: 잔상은 남고, 지연 후 따라 내려옴
+	}
+	else
+	{
+		GhostPercent = NewPercent;      // 증가(힐 등): 잔상은 위로 끌리지 않고 즉시 동행
+	}
+}
+
+void SSayuHealthBar::StartGhostDrain()
+{
+	// 연타 대응: 매 타격마다 지연을 리셋 — 잔상은 '마지막 타격' 기준으로 대기
+	GhostDelayRemaining = Style->GhostDelay;
+
+	if (!GhostTimerHandle.IsValid())    // 이미 깨어 있으면 재등록하지 않음
+	{
+		// 주기 0 = 활성 상태 동안 매 프레임 호출. Tick과의 차이는 '필요한 동안만 존재'한다는 것
+		GhostTimerHandle = RegisterActiveTimer(0.f,FWidgetActiveTimerDelegate::CreateSP(this, &SSayuHealthBar::GhostTick));
+	}
+}
+
+EActiveTimerReturnType SSayuHealthBar::GhostTick(double InCurrentTime, float InDeltaTime)
+{
+	// 1단계: 대기 — 그림이 안 변하므로 Invalidate 신고도 없음 (헛신고 안 하기)
+	if (GhostDelayRemaining > 0.f)
+	{
+		GhostDelayRemaining -= InDeltaTime;
+		return EActiveTimerReturnType::Continue;
+	}
+
+	// 2단계: 감쇠 — 현재 체력 지점을 바닥으로 두고 내려감
+	const float TargetPercent = GetHealthPercent();
+	GhostPercent = FMath::Max(GhostPercent - Style->GhostDrainSpeed * InDeltaTime, TargetPercent);
+	Invalidate(EInvalidateWidgetReason::Paint);
+
+	// 3단계: 도착 — 타이머 소멸, 위젯은 다시 완전 휴면(이벤트 대기)으로
+	if (GhostPercent <= TargetPercent)
+	{
+		GhostTimerHandle.Reset();                  // 우리 쪽 장부 정리
+		return EActiveTimerReturnType::Stop;       // Slate 쪽 등록 해제
+	}
+	return EActiveTimerReturnType::Continue;
 }
 
 int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
@@ -122,6 +180,8 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 	// 층 번호는 후위 증가 방식 — ④에서 고스트 층이 배경과 채움 '사이'에 끼어들 예정
 	int32 RetLayerId = LayerId;
 	const FLinearColor ParentTint = InWidgetStyle.GetColorAndOpacityTint();
+	const float Percent = GetHealthPercent();
+	const FVector2D LocalSize = AllottedGeometry.GetLocalSize();
 
 	// 명령서 1: 배경 = '다음 줄' 색
 	FSlateDrawElement::MakeBox(
@@ -130,13 +190,17 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 		&Style->BackgroundBrush, ESlateDrawEffect::None,
 		Style->BackgroundBrush.GetTint(InWidgetStyle) * ParentTint * BackgroundTintAttribute.Get().GetColor(InWidgetStyle));
 
-	// (④ 예약석: 고스트 명령서가 여기 들어옴)
-
-	// 명령서 2: 채움 = '현재 줄' 색. 0%면 폭 0짜리 명령서를 아예 안 만듦
-	const float Percent = GetHealthPercent();
+	// 명령서 2: 고스트 — 채움보다 넓게 남아 있을 때만 (배경 위, 채움 아래 층)
+	if (GhostPercent > Percent)
+	{
+		FSlateDrawElement::MakeBox(OutDrawElements, RetLayerId++,
+			AllottedGeometry.ToPaintGeometry(FVector2D(LocalSize.X * GhostPercent, LocalSize.Y), FSlateLayoutTransform()), 
+				&Style->GhostBrush, ESlateDrawEffect::None,Style->GhostBrush.GetTint(InWidgetStyle) * ParentTint);
+	}
+		
+	// 명령서 3: 채움 = '현재 줄' 색. 0%면 폭 0짜리 명령서를 아예 안 만듦
 	if (Percent > 0.f)
 	{
-		const FVector2D LocalSize = AllottedGeometry.GetLocalSize();
 		FSlateDrawElement::MakeBox(
 			OutDrawElements, RetLayerId++,
 			AllottedGeometry.ToPaintGeometry(

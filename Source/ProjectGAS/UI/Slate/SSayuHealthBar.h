@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Widgets/SLeafWidget.h"
 #include "Types/SlateAttribute.h"      // TSlateAttribute
+#include "Types/WidgetActiveTimerDelegate.h"   // FWidgetActiveTimerDelegate, EActiveTimerReturnType
 #include "GameplayEffectTypes.h"        // FOnAttributeChangeData
 #include "SayuHealthBarWidgetStyle.h"   // FSayuHealthBarStyle
 
@@ -54,11 +55,20 @@ private:
 	void HandleMaxHealthChanged(const FOnAttributeChangeData& Data);
 	float GetHealthPercent() const;   // 비율 계산의 단일 지점 — Stage 2가 재사용할 이음새
 	
+	// ── 고스트 바 (피격 잔상) ──
+	void SyncGhostToPercent();   // 비율 변화 후 잔상 방침 결정: 감소면 감쇠 시작, 증가면 즉시 동행
+	void StartGhostDrain();
+	EActiveTimerReturnType GhostTick(double InCurrentTime, float InDeltaTime);
+	
 	const FSayuHealthBarStyle* Style = nullptr;
 	FVector2D DesiredBarSize = FVector2D(400.f, 32.f);
 	
 	TSlateAttribute<FSlateColor> FillTintAttribute;         // 현재 줄 색
 	TSlateAttribute<FSlateColor> BackgroundTintAttribute;   // 다음 줄 색
+	
+	float GhostPercent = 0.f;           // 잔상이 현재 가리키는 비율
+	float GhostDelayRemaining = 0.f;    // 감쇠 시작까지 남은 대기 시간
+	TSharedPtr<FActiveTimerHandle> GhostTimerHandle;   // 중복 등록 방지 + 명시 해제용 손잡이
 	
 	TWeakObjectPtr<UAbilitySystemComponent> BoundASC;
 	FDelegateHandle HealthChangedHandle;
