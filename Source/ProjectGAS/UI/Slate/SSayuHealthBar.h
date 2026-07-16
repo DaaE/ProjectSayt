@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SLeafWidget.h"
+#include "Types/SlateAttribute.h"      // TSlateAttribute
 #include "GameplayEffectTypes.h"        // FOnAttributeChangeData
 #include "SayuHealthBarWidgetStyle.h"   // FSayuHealthBarStyle
 
@@ -14,6 +15,8 @@ class UAbilitySystemComponent;
 // Health→(줄, 줄 내 %, 색 쌍) 매핑은 위젯 밖 게임 로직 소관 (Stage 2/Sayt).
 class PROJECTGAS_API SSayuHealthBar : public SLeafWidget
 {
+	SLATE_DECLARE_WIDGET(SSayuHealthBar, SLeafWidget)
+	
 public:
 	SLATE_BEGIN_ARGS(SSayuHealthBar)
 		: _Style(nullptr)
@@ -28,6 +31,7 @@ public:
 	SLATE_END_ARGS()
 
 	/** Constructs this widget with InArgs */
+	SSayuHealthBar();   // TSlateAttribute 멤버가 생성자 초기화를 요구함 (아래 cpp 참고)
 	void Construct(const FArguments& InArgs);
 	virtual ~SSayuHealthBar() override;
 
@@ -53,8 +57,8 @@ private:
 	const FSayuHealthBarStyle* Style = nullptr;
 	FVector2D DesiredBarSize = FVector2D(400.f, 32.f);
 	
-	FSlateColor FillTint;         // 현재 줄 색
-	FSlateColor BackgroundTint;   // 다음 줄 색
+	TSlateAttribute<FSlateColor> FillTintAttribute;         // 현재 줄 색
+	TSlateAttribute<FSlateColor> BackgroundTintAttribute;   // 다음 줄 색
 	
 	TWeakObjectPtr<UAbilitySystemComponent> BoundASC;
 	FDelegateHandle HealthChangedHandle;

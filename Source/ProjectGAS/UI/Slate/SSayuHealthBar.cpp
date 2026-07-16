@@ -7,6 +7,20 @@
 #include "Rendering/DrawElements.h"
 #include "UI/SayuStyle.h"
 
+SLATE_IMPLEMENT_WIDGET(SSayuHealthBar)
+void SSayuHealthBar::PrivateRegisterAttributes(FSlateAttributeInitializer& AttributeInitializer)
+{
+	// 계약: 틴트가 바뀌면 Paint만 낡는다 (크기 불변이므로 Layout 불필요)
+	SLATE_ADD_MEMBER_ATTRIBUTE_DEFINITION_WITH_NAME(AttributeInitializer, "FillTint", FillTintAttribute, EInvalidateWidgetReason::Paint);
+	SLATE_ADD_MEMBER_ATTRIBUTE_DEFINITION_WITH_NAME(AttributeInitializer, "BackgroundTint", BackgroundTintAttribute, EInvalidateWidgetReason::Paint);
+}
+
+// TSlateAttribute는 기본 생성이 불가 — 소유 위젯(*this)을 받아야 태어남.
+// 그래서 Construct()가 아닌 진짜 생성자의 초기화 목록이 필요해짐
+SSayuHealthBar::SSayuHealthBar() : FillTintAttribute(*this), BackgroundTintAttribute(*this)
+{
+}
+
 void SSayuHealthBar::Construct(const FArguments& InArgs)
 {
 	// 스타일 폴백: 인자로 안 오면 프로젝트 등록소에서 조회
@@ -17,8 +31,8 @@ void SSayuHealthBar::Construct(const FArguments& InArgs)
 	DesiredBarSize = InArgs._DesiredBarSize;
 
 	// 런타임 틴트의 시작값은 스타일의 기본 룩
-	FillTint = Style->DefaultFillTint;
-	BackgroundTint = Style->DefaultBackgroundTint;
+	FillTintAttribute.Set(*this, Style->DefaultFillTint);
+	BackgroundTintAttribute.Set(*this, Style->DefaultBackgroundTint);
 
 	// 이 위젯의 갱신 동력은 이벤트(Push)+Invalidate뿐 — Tick은 명시적으로 봉인
 	SetCanTick(false);
@@ -74,14 +88,12 @@ void SSayuHealthBar::UnbindFromASC()
 
 void SSayuHealthBar::SetFillTint(const FSlateColor& InTint)
 {
-	FillTint = InTint;
-	Invalidate(EInvalidateWidgetReason::Paint);
+	FillTintAttribute.Set(*this, InTint);   // 비교→대입→달라졌을 때만 Paint 신고 (전부 자동)
 }
 
 void SSayuHealthBar::SetBackgroundTint(const FSlateColor& InTint)
 {
-	BackgroundTint = InTint;
-	Invalidate(EInvalidateWidgetReason::Paint);
+	BackgroundTintAttribute.Set(*this, InTint);
 }
 
 void SSayuHealthBar::HandleHealthChanged(const FOnAttributeChangeData& Data)
@@ -116,7 +128,7 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 		OutDrawElements, RetLayerId++,
 		AllottedGeometry.ToPaintGeometry(),
 		&Style->BackgroundBrush, ESlateDrawEffect::None,
-		Style->BackgroundBrush.GetTint(InWidgetStyle) * ParentTint * BackgroundTint.GetColor(InWidgetStyle));
+		Style->BackgroundBrush.GetTint(InWidgetStyle) * ParentTint * BackgroundTintAttribute.Get().GetColor(InWidgetStyle));
 
 	// (④ 예약석: 고스트 명령서가 여기 들어옴)
 
@@ -130,7 +142,7 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 			AllottedGeometry.ToPaintGeometry(
 				FVector2D(LocalSize.X * Percent, LocalSize.Y), FSlateLayoutTransform()),
 			&Style->FillBrush, ESlateDrawEffect::None,
-			Style->FillBrush.GetTint(InWidgetStyle) * ParentTint * FillTint.GetColor(InWidgetStyle));
+			Style->FillBrush.GetTint(InWidgetStyle) * ParentTint * FillTintAttribute.Get().GetColor(InWidgetStyle));
 	}
 
 	return RetLayerId - 1;   // 후위 증가는 '다음에 쓸 번호'를 가리키므로 -1이 '실제로 쓴 마지막 번호'
@@ -149,6 +161,7 @@ FVector2D SSayuHealthBar::ComputeDesiredSize(float LayoutScaleMultiplier) const
 #include "Widgets/Layout/SBox.h"
 
 static TSharedPtr<SWidget> GSayuHealthBarRoot;
+static TWeakPtr<SSayuHealthBar> GSayuHealthBarWidget;
 
 static FAutoConsoleCommandWithWorld GSayuHealthBarShowCmd(
 	TEXT("Sayu.HealthBar.Show"),
@@ -179,6 +192,20 @@ static FAutoConsoleCommandWithWorld GSayuHealthBarShowCmd(
 			];
 		Viewport->AddViewportWidgetContent(GSayuHealthBarRoot.ToSharedRef());
 		Bar->BindToASC(ASC);
+		GSayuHealthBarWidget = Bar;
+	})
+);
+
+// 신규 — [임시] 줄 색 스왑 시뮬레이션: Sayu.HealthBar.Tint <R> <G> <B> (0~1)
+static FAutoConsoleCommandWithWorldAndArgs GSayuHealthBarTintCmd(
+	TEXT("Sayu.HealthBar.Tint"),
+	TEXT("[임시] 표시 중인 체력바의 채움 틴트를 변경 (TSlateAttribute 검증용)"),
+	FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld*)
+	{
+		TSharedPtr<SSayuHealthBar> Bar = GSayuHealthBarWidget.Pin();
+		if (!Bar.IsValid() || Args.Num() < 3) { return; }
+		Bar->SetFillTint(FLinearColor(
+			FCString::Atof(*Args[0]), FCString::Atof(*Args[1]), FCString::Atof(*Args[2])));
 	})
 );
 
