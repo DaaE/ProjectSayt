@@ -182,6 +182,7 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 	const FLinearColor ParentTint = InWidgetStyle.GetColorAndOpacityTint();
 	const float Percent = GetHealthPercent();
 	const FVector2D LocalSize = AllottedGeometry.GetLocalSize();
+	const float FillWidth = LocalSize.X * Percent;
 
 	// 명령서 1: 배경 = '다음 줄' 색
 	FSlateDrawElement::MakeBox(
@@ -208,7 +209,52 @@ int32 SSayuHealthBar::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedG
 			&Style->FillBrush, ESlateDrawEffect::None,
 			Style->FillBrush.GetTint(InWidgetStyle) * ParentTint * FillTintAttribute.Get().GetColor(InWidgetStyle));
 	}
-
+	
+	// 4층: 음영 그라디언트 — 채움 폭만큼, 위 투명→아래 검정. 색 무관 '어둡히기 막'이라 줄 색이 무엇으로 바뀌어도 재계산 없이 성립
+	if (Percent > 0.f && (Style->ShadeTopAlpha > 0.f || Style->ShadeBottomAlpha > 0.f))
+	{
+		TArray<FSlateGradientStop> Stops;
+		Stops.Add(FSlateGradientStop(FVector2D::ZeroVector, FLinearColor(0.f, 0.f, 0.f, Style->ShadeTopAlpha)));
+		Stops.Add(FSlateGradientStop(FVector2D(0.f, LocalSize.Y), FLinearColor(0.f, 0.f, 0.f, Style->ShadeBottomAlpha)));
+		
+		FSlateDrawElement::MakeGradient(OutDrawElements, RetLayerId++,
+			AllottedGeometry.ToPaintGeometry(FVector2D(FillWidth, LocalSize.Y), FSlateLayoutTransform()),
+			Stops, Orient_Vertical, ESlateDrawEffect::None);
+	}
+	
+	// 5층: 상단 하이라이트 — 채움 폭 × 높이 28%의 반투명 흰 띠 (유리 반사)
+	if (Percent > 0.f)
+	{
+		FSlateDrawElement::MakeBox(OutDrawElements, RetLayerId++,
+			AllottedGeometry.ToPaintGeometry(FVector2D(FillWidth, LocalSize.Y * 0.28f), FSlateLayoutTransform()),
+			&Style->HighlightBrush, ESlateDrawEffect::None,	Style->HighlightBrush.GetTint(InWidgetStyle) * ParentTint);
+	}
+	
+	// 6층: 눈금 — 25% 간격 세로선 3개. 서로 안 겹치므로 '같은 층'에 3개 제출
+	// (층 규율의 정확한 진술: 겹치는 것'만' 층 분리가 필요 — 형제끼리 무겹침이면 동층 가능)
+	if (Style->bShowTicks)
+	{
+		const FLinearColor TickTint = Style->TickColor.GetColor(InWidgetStyle) * ParentTint;
+		for (float Frac : { 0.25f, 0.5f, 0.75f })   // post-your-era: 초기화 리스트를 도는 range-based for
+		{
+			TArray<FVector2f> Points;
+			Points.Add(FVector2f(LocalSize.X * Frac, 2.f));
+			Points.Add(FVector2f(LocalSize.X * Frac, LocalSize.Y - 2.f));
+			
+			FSlateDrawElement::MakeLines(OutDrawElements, RetLayerId,
+				AllottedGeometry.ToPaintGeometry(),
+				Points, ESlateDrawEffect::None, TickTint, /*bAntialias=*/true, /*Thickness=*/1.f);
+		}
+		
+		RetLayerId++;   // 층은 한 번만 올림
+	}
+	
+	// 7층(최상): 프레임 외곽선 — 내부 투명이라 아래 층들이 비쳐 보임
+	FSlateDrawElement::MakeBox(OutDrawElements, RetLayerId++,
+		AllottedGeometry.ToPaintGeometry(),
+		&Style->FrameBrush, ESlateDrawEffect::None,
+		Style->FrameBrush.GetTint(InWidgetStyle) * ParentTint);
+	
 	return RetLayerId - 1;   // 후위 증가는 '다음에 쓸 번호'를 가리키므로 -1이 '실제로 쓴 마지막 번호'
 }
 

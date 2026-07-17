@@ -56,6 +56,32 @@ struct PROJECTGAS_API FSayuHealthBarStyle : public FSlateWidgetStyle
 	UPROPERTY(EditAnywhere, Category = Appearance)
 	FSlateColor DefaultBackgroundTint = FLinearColor(0.02f, 0.02f, 0.025f, 0.9f);
 	FSayuHealthBarStyle& SetDefaultBackgroundTint(const FSlateColor& InTint) { DefaultBackgroundTint = InTint; return *this; }
+	
+	// ── ⑤ 폴리시 층들 ──
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	FSlateBrush FrameBrush;   // 최상층 외곽선 (채움 무관 고정 룩)
+	FSayuHealthBarStyle& SetFrameBrush(const FSlateBrush& InBrush) { FrameBrush = InBrush; return *this; }
+	
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	FSlateBrush HighlightBrush;   // 채움 상단 유리 반사 띠
+	FSayuHealthBarStyle& SetHighlightBrush(const FSlateBrush& InBrush) { HighlightBrush = InBrush; return *this; }
+	
+	// 음영 강도 — 색이 아니라 '검정 알파'만 정의: 어떤 줄 색 위에서도 성립하는 색 무관 막
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	float ShadeTopAlpha = 0.f;
+	FSayuHealthBarStyle& SetShadeTopAlpha(float InValue) { ShadeTopAlpha = InValue; return *this; }
+	
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	float ShadeBottomAlpha = 0.35f;
+	FSayuHealthBarStyle& SetShadeBottomAlpha(float InValue) { ShadeBottomAlpha = InValue; return *this; }
+	
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	bool bShowTicks = true;
+	FSayuHealthBarStyle& SetShowTicks(bool bInValue) { bShowTicks = bInValue; return *this; }
+	
+	UPROPERTY(EditAnywhere, Category = Appearance)
+	FSlateColor TickColor = FLinearColor(0.f, 0.f, 0.f, 0.25f);
+	FSayuHealthBarStyle& SetTickColor(const FSlateColor& InColor) { TickColor = InColor; return *this; }
 };
 
 // 에디터 에셋 컨테이너 — 이 스타일을 에디터에서 에셋으로 만들 수 있게 하는 포장.

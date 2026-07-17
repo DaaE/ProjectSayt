@@ -25,4 +25,6 @@ void FSayuHealthBarStyle::GetResources(TArray<const FSlateBrush*>& OutBrushes) c
 	OutBrushes.Add(&BackgroundBrush);
 	OutBrushes.Add(&FillBrush);
 	OutBrushes.Add(&GhostBrush);
+	OutBrushes.Add(&FrameBrush);
+	OutBrushes.Add(&HighlightBrush);
 }

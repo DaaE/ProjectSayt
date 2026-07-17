@@ -23,8 +23,16 @@ void FSayuStyle::Initialize()
 		.SetBackgroundBrush(FSlateRoundedBoxBrush(FLinearColor::White, 4.f))		// 배경도 '다음 줄 색' 틴트를 입어야 하므로 원색 흰색
 		.SetFillBrush(FSlateRoundedBoxBrush(FLinearColor::White, 4.f))
 		.SetGhostBrush(FSlateRoundedBoxBrush(FLinearColor(1.f, 0.45f, 0.1f, 0.6f), 4.f))
+		// 프레임: 내부 투명 + 외곽선만. ⚠️ 4인자 오버로드(색, 반경, 외곽선색, 외곽선두께)는
+		// 5.7 실물 대조 필요 — 에러 시 F12로 생성자 가족 확인
+		.SetFrameBrush(FSlateRoundedBoxBrush(FLinearColor::Transparent, 4.f, FLinearColor(0.85f, 0.9f, 1.f, 0.55f), 1.5f))
+		.SetHighlightBrush(FSlateColorBrush(FLinearColor(1.f, 1.f, 1.f, 0.10f)))
 		.SetDefaultFillTint(FLinearColor(0.7f, 0.1f, 0.1f))
 		.SetDefaultBackgroundTint(FLinearColor(0.02f, 0.02f, 0.025f, 0.9f))
+		.SetShadeTopAlpha(0.f)
+		.SetShadeBottomAlpha(0.35f)
+		.SetShowTicks(true)
+		.SetTickColor(FLinearColor(0.f, 0.f, 0.f, 0.25f))
 		.SetGhostDelay(0.25f)
 		.SetGhostDrainSpeed(1.2f));
 
