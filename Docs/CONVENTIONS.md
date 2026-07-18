@@ -37,6 +37,14 @@
 - 진행 트래커 갱신, 측정 증거(Docs/Media)
 - 설계 결정 회고 (왜 이 구조인가 — trade-off 기록)
 
-## 로깅 (도입 예정)
-- `LogTemp` 사용 금지 예정 → `LogSayuCombat` / `LogSayuUI` / `LogSayuStudy` 등
-  카테고리 분리 (`DECLARE_LOG_CATEGORY_EXTERN`)
+## 로깅
+- `LogTemp` 사용 금지 (신규 코드 포함)
+- 카테고리 4종: `LogSayuCombat`(전투·GAS·캐릭터) / `LogSayuData`(데이터·저장·인벤토리) /
+  `LogSayuUI`(Slate·HUD) / `LogSayuEditor`(에디터 모듈)
+  — 선언 위치: `SayuLogChannels.h/.cpp`, 에디터 모듈은 `SayuEditor.h/.cpp`
+- 레벨 의미론:
+  - `Error`: 깨진 불변식·설정 누락 — 프로그래머가 고쳐야 함
+  - `Warning`: 복구했지만 의심스러운 상태 — 조사 가치 있음
+  - `Log`: 저빈도 라이프사이클 이벤트 — 세션 로그에서 흐름이 읽히는 정도
+  - `Verbose`: 개발용 흐름 추적, 기본 꺼짐 — 콘솔 `log <카테고리> Verbose`로 점등
+- 새 디버그 로그는 처음부터 `Verbose`로 작성한다 — 작업 후 삭제가 아니라 소등
