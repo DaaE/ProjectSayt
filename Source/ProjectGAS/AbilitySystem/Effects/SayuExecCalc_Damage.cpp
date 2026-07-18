@@ -1,6 +1,7 @@
 #include "SayuExecCalc_Damage.h"
 #include "AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
 #include "AbilitySystemComponent.h"
+#include "SayuLogChannels.h"
 
 // Execution Calculation은 캡처 정의를 static 구조체로 한 번만 만들어두고
 // 재사용하는 게 관례예요 (MMC처럼 멤버 변수로 들고 있는 방식과는 다름,
@@ -55,7 +56,7 @@ void USayuExecCalc_Damage::Execute_Implementation(
 	// 데미지 공식 - 지금은 단순 차감. Defense가 더 크면 0으로 클램프.
 	const float FinalDamage = FMath::Max((AttackPower - Defense) * Multiplier, 0.f);
 	
-	UE_LOG(LogTemp, Warning,
+	UE_LOG(LogSayuCombat, Verbose,
 	TEXT("ExecCalc - AttackPower: %.1f, Defense: %.1f, Multiplier: %.2f, FinalDamage: %.1f"),
 	AttackPower, Defense, Multiplier, FinalDamage);
 

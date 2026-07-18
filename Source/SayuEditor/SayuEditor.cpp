@@ -2,6 +2,8 @@
 
 #include "SayuEditor.h"
 
+DEFINE_LOG_CATEGORY(LogSayuEditor);
+
 #define LOCTEXT_NAMESPACE "FSayuEditorModule"
 
 void FSayuEditorModule::StartupModule()

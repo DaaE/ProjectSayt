@@ -3,6 +3,7 @@
 
 #include "SayuCharacterBase.h"
 #include "AbilitySystemComponent.h"
+#include "SayuLogChannels.h"
 #include "AbilitySystem/Abilities/SayuGameplayAbility.h"
 #include "AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
 #include "Components/CapsuleComponent.h"
@@ -82,7 +83,7 @@ void ASayuCharacterBase::InitializeAbilitySystem()
 				CombatAttributeSet->InitAttackPower(Stats.AttackPower);
 				CombatAttributeSet->InitDefense(Stats.Defense);
 
-				UE_LOG(LogTemp, Warning, TEXT("%s: CombatStats 적용됨 (Row: %s, MaxHealth: %.0f, AttackPower: %.0f)"),
+				UE_LOG(LogSayuCombat, Verbose, TEXT("%s: CombatStats 적용됨 (Row: %s, MaxHealth: %.0f, AttackPower: %.0f)"),
 					*GetName(), *CombatStatsRowID.ToString(), Stats.MaxHealth, Stats.AttackPower);
 			}
 		}
@@ -91,9 +92,6 @@ void ASayuCharacterBase::InitializeAbilitySystem()
 	
 	GiveDefaultAbilities();
 	bAbilitySystemInitialized = true;
-	
-	UE_LOG(LogTemp, Warning, TEXT("%s: ASC Initialized"), *GetName());
-	// 확인 끝나면 지워도 됨
 }
 
 void ASayuCharacterBase::GiveDefaultAbilities()

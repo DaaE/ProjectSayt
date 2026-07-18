@@ -1,6 +1,7 @@
 #include "AbilityTask_WeaponTrace.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "SayuLogChannels.h"
 
 UAbilityTask_WeaponTrace* UAbilityTask_WeaponTrace::WeaponTrace(
 	UGameplayAbility* OwningAbility,
@@ -96,7 +97,7 @@ void UAbilityTask_WeaponTrace::TickTask(float DeltaTime)
 				AActor* HitActor = Hit.GetActor();
 				if (HitActor && !AlreadyHitActors.Contains(HitActor))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("스윕 충돌 발견: %s"), *HitActor->GetName());
+					UE_LOG(LogSayuCombat, Verbose, TEXT("스윕 충돌 발견: %s"), *HitActor->GetName());
 					AlreadyHitActors.Add(HitActor);
 					OnHit.Broadcast(HitActor, Hit);	// 어빌리티 쪽에 새 타격 알림
 				}

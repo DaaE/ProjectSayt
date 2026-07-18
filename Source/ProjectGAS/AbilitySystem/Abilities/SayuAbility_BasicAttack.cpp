@@ -10,6 +10,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Effects/SayuEffectPoolManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "SayuLogChannels.h"
 
 USayuAbility_BasicAttack::USayuAbility_BasicAttack()
 {
@@ -45,7 +46,6 @@ void USayuAbility_BasicAttack::ActivateAbility(
 		// 실제 차감을 실행해요. 이 둘이 분리된 이유는 멀티플레이어에서
 		// "확인"과 "실행" 사이에 다른 어빌리티가 끼어들 수 있어서예요.
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("BasicAttack Commit Failed - On Cooldown"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
@@ -159,7 +159,7 @@ UGameplayEffect* USayuAbility_BasicAttack::GetCooldownGameplayEffect() const
 
 void USayuAbility_BasicAttack::OnMontageCompleted()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Montage Completed - Normal End"));
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Montage Completed - Normal End"));
 	// "정상 종료" - 여기서 쿨타임을 정식으로 시작해도 됨
 	EndAbility(GetCurrentAbilitySpecHandle(), CurrentActorInfo, 
 		GetCurrentActivationInfo(), true, false);
@@ -167,7 +167,7 @@ void USayuAbility_BasicAttack::OnMontageCompleted()
 
 void USayuAbility_BasicAttack::OnMontageInterrupted()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Montage Interrupted - Cancelled"));
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Montage Interrupted - Cancelled"));
 	// "비정상 캔슬" - 다른 어빌리티가 끼어들어 중단된 경우
 	EndAbility(GetCurrentAbilitySpecHandle(), CurrentActorInfo,
 		GetCurrentActivationInfo(), true, true);
@@ -175,14 +175,14 @@ void USayuAbility_BasicAttack::OnMontageInterrupted()
 
 void USayuAbility_BasicAttack::OnMontageCancelled()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Montage Cancelled"));
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Montage Cancelled"));
 	EndAbility(GetCurrentAbilitySpecHandle(), CurrentActorInfo,
 		GetCurrentActivationInfo(), true, true);
 }
 
 void USayuAbility_BasicAttack::OnComboWindowOpenEvent(FGameplayEventData Payload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Combo Window OPEN event received"));
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Combo Window OPEN event received"));
 
 	if (ComboWindowEffectClass)
 	{
@@ -204,7 +204,7 @@ void USayuAbility_BasicAttack::OnComboWindowOpenEvent(FGameplayEventData Payload
 
 void USayuAbility_BasicAttack::OnComboWindowCloseEvent(FGameplayEventData Payload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Combo Window CLOSE event received"));
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Combo Window CLOSE event received"));
 
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
 	{
@@ -240,7 +240,7 @@ void USayuAbility_BasicAttack::OnComboInputEvent(FGameplayEventData Payload)
 void USayuAbility_BasicAttack::PlayComboStep(int32 Index)
 {
 	CurrentComboIndex = Index;
-	UE_LOG(LogTemp, Warning, TEXT("Combo Hit: %d"), Index + 1);
+	UE_LOG(LogSayuCombat, Verbose, TEXT("Combo Hit: %d"), Index + 1);
 
 	if (ComboIncrementEffectClass)
 	{
@@ -279,12 +279,12 @@ void USayuAbility_BasicAttack::PlayComboStep(int32 Index)
 
 void USayuAbility_BasicAttack::OnTraceStartEvent(FGameplayEventData Payload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] TraceStart - Task 생성"), CurrentComboIndex);
+	UE_LOG(LogSayuCombat, Verbose, TEXT("[Combo %d] TraceStart - Task 생성"), CurrentComboIndex);
 	
 	// 혹시 직전 Task가 안 끝나고 남아있으면 정리 (안전장치)
 	if (WeaponTraceTask)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Combo %d] 이전 Task 정리"), CurrentComboIndex);
+		UE_LOG(LogSayuCombat, Verbose, TEXT("[Combo %d] 이전 Task 정리"), CurrentComboIndex);
 		WeaponTraceTask->EndTask();
 	}
 
@@ -297,7 +297,7 @@ void USayuAbility_BasicAttack::OnTraceStartEvent(FGameplayEventData Payload)
 
 void USayuAbility_BasicAttack::OnTraceEndEvent(FGameplayEventData Payload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] TraceEnd - Task 종료"), CurrentComboIndex);
+	UE_LOG(LogSayuCombat, Verbose, TEXT("[Combo %d] TraceEnd - Task 종료"), CurrentComboIndex);
 	
 	if (WeaponTraceTask)
 	{
@@ -308,7 +308,7 @@ void USayuAbility_BasicAttack::OnTraceEndEvent(FGameplayEventData Payload)
 
 void USayuAbility_BasicAttack::OnWeaponHitActor(AActor* HitActor, FHitResult Hit)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[Combo %d] OnWeaponHitActor 호출: %s"),
+	UE_LOG(LogSayuCombat, Verbose, TEXT("[Combo %d] OnWeaponHitActor 호출: %s"),
 		CurrentComboIndex, HitActor ? *HitActor->GetName() : TEXT("null"));
 	
 	if (!HitActor || !DamageEffectClass)
@@ -338,7 +338,7 @@ void USayuAbility_BasicAttack::OnWeaponHitActor(AActor* HitActor, FHitResult Hit
 			Multiplier = ComboDamageMultipliers[CurrentComboIndex];
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("[Combo %d] Multiplier: %.2f, ComboDamageMultipliers.Num(): %d"),
+		UE_LOG(LogSayuCombat, Verbose, TEXT("[Combo %d] Multiplier: %.2f, ComboDamageMultipliers.Num(): %d"),
 		CurrentComboIndex, Multiplier, ComboDamageMultipliers.Num());
 
 		EffectSpec.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.DamageMultiplier")),

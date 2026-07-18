@@ -2,6 +2,8 @@
 
 
 #include "Effects/SayuEffectPoolManager.h"
+
+#include "SayuLogChannels.h"
 #include "SayuPooledEffect.h"
 
 // Sets default values
@@ -53,7 +55,7 @@ void ASayuEffectPoolManager::PlayEffectAtLocation(const FVector& Location, const
 
 	// 다 빌려나가서 빈 게 없으면 - 새로 하나 더 만들어서 씀
 	// (이 로그가 자주 뜨면 InitialPoolSize를 늘리라는 신호)
-	UE_LOG(LogTemp, Warning, TEXT("EffectPool 부족 - 풀 크기를 늘리세요. 현재: %d"), Pool.Num());
+	UE_LOG(LogSayuCombat, Warning, TEXT("EffectPool 부족 - 풀 크기를 늘리세요. 현재: %d"), Pool.Num());
 
 	if (ASayuPooledEffect* NewEffect = SpawnPooledEffect())
 	{

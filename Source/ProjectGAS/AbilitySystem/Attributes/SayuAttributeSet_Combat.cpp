@@ -86,9 +86,6 @@ void USayuAttributeSet_Combat::PostGameplayEffectExecute(const FGameplayEffectMo
 
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s Health changed: %.1f / %.1f"),
-			*GetOwningActor()->GetName(), GetHealth(), GetMaxHealth());
-			
 		// Base(원장) 교정: 막타 오버킬로 Base가 음수로 남는 것 방지.
 		// (PreAttributeChange는 Current 쪽 관문이라 Base까지 지켜주지 않음 —
 		//  Base가 -6.8로 남으면 이후 +10 힐이 3.2부터 시작하는 잠식 버그가 됨)

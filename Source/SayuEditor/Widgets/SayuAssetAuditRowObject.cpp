@@ -4,6 +4,7 @@
 #include "SayuAssetAuditRowObject.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
+#include "SayuEditor/SayuEditor.h"
 
 void USayuAssetAuditRowObject::LoadAllBundles()
 {
@@ -19,7 +20,7 @@ void USayuAssetAuditRowObject::LoadAllBundles()
 	LoadHandle = UAssetManager::Get().LoadPrimaryAsset(AssetId, Bundles, 
 		FStreamableDelegate::CreateLambda([LoadingId]()
 		{
-			UE_LOG(LogTemp, Log, TEXT("[Sayu] Bundle 로드 완료: %s"), *LoadingId.ToString());
+			UE_LOG(LogSayuEditor, Log, TEXT("[Sayu] Bundle 로드 완료: %s"), *LoadingId.ToString());
 		}));
 }
 

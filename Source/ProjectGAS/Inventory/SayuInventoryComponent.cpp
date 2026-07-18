@@ -2,6 +2,8 @@
 
 
 #include "SayuInventoryComponent.h"
+
+#include "SayuLogChannels.h"
 #include "Items/SayuItemDefinition.h"
 #include "Items/SayuItemIdSubsystem.h"
 #include "Items/SayuItemInstance.h"
@@ -275,7 +277,7 @@ void USayuInventoryComponent::DebugPrintGrid() const
 		GridString += Row + TEXT("\n");
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("%s"), *GridString);
+	UE_LOG(LogSayuData, Verbose, TEXT("%s"), *GridString);
 }
 
 

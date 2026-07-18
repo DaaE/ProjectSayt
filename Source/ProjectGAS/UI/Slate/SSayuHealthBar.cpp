@@ -3,6 +3,7 @@
 
 #include "SSayuHealthBar.h"
 #include "AbilitySystemComponent.h"
+#include "SayuLogChannels.h"
 #include "AbilitySystem/Attributes/SayuAttributeSet_Combat.h"
 #include "Rendering/DrawElements.h"
 #include "UI/SayuStyle.h"
@@ -292,7 +293,7 @@ static FAutoConsoleCommandWithWorld GSayuHealthBarShowCmd(
 		APawn* Pawn = PC ? PC->GetPawn() : nullptr;
 		// 캐릭터 클래스명에 의존하지 않는 표준 ASC 조회 경로 (IAbilitySystemInterface 경유)
 		UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Pawn);
-		if (!ASC) { UE_LOG(LogTemp, Warning, TEXT("[HealthBar.Show] 플레이어 ASC를 찾지 못함")); return; }
+		if (!ASC) { UE_LOG(LogSayuUI, Warning, TEXT("[HealthBar.Show] 플레이어 ASC를 찾지 못함")); return; }
 
 		TSharedPtr<SSayuHealthBar> Bar;
 		GSayuHealthBarRoot =
