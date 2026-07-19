@@ -23,7 +23,7 @@
      그래픽(GameUserSettings/Scalability/DLSS 공식 플러그인) → 키(EnhancedInputUserSettings) →
      오디오 순 증분 확장
    - 현재 인벤토리/HUD의 AddToViewport 직접 부착(스택 미인지)을 정식 스택 push로 교체,
-     `USayuUIInputModeSubsystem`(가교)도 이때 정리
+     `USaytUIInputModeSubsystem`(가교)도 이때 정리
    - 목표는 실무 투입 가능한 깊이
 2. **목표 추적 커널 + 튜토리얼 프레젠테이션** *(1번 종속)* —
    - 커널: 목표 정의(DataTable/DataAsset: 트리거 GMS 태그·조건·횟수) + 진행 매칭(GMS 순수

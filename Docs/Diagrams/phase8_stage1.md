@@ -3,7 +3,7 @@
 ```mermaid
 classDiagram
     direction LR
-    class SSayuHealthBar {
+    class SSaytHealthBar {
         <<SLeafWidget>>
         -TWeakObjectPtr~UAbilitySystemComponent~ BoundASC
         -FDelegateHandle HealthChangedHandle
@@ -19,42 +19,42 @@ classDiagram
         +OnPaint()
         +ComputeDesiredSize()
     }
-    class FSayuHealthBarStyle {
+    class FSaytHealthBarStyle {
         <<FSlateWidgetStyle>>
         +Background/Fill/Ghost/Frame/Highlight Brush
         +DefaultFillTint / DefaultBackgroundTint
         +GhostDelay / GhostDrainSpeed
         +Shade·Tick 파라미터
     }
-    class FSayuStyle {
+    class FSaytStyle {
         <<스타일 등록소·싱글턴>>
         +Initialize() / Shutdown()
         +Get()
     }
-    class USayuHUDWidget {
+    class USaytHUDWidget {
         <<UUserWidget>>
         +HealthBarHost : UNativeWidgetHost [BindWidget]
-        -HealthBar : TSharedPtr~SSayuHealthBar~
+        -HealthBar : TSharedPtr~SSaytHealthBar~
         +NativeOnInitialized()
         +NativeDestruct()
     }
     class UAbilitySystemComponent {
         +GetGameplayAttributeValueChangeDelegate(Attr)
     }
-    class USayuAttributeSet_Combat {
+    class USaytAttributeSet_Combat {
         +PreAttributeChange() Current 관문 clamp
         +PostGameplayEffectExecute() Base 조건부 교정
     }
-    class FProjectGASModule {
+    class FProjectSaytModule {
         <<커스텀 게임 모듈>>
         +StartupModule() / ShutdownModule()
     }
-    USayuHUDWidget --> SSayuHealthBar : 소유 + NativeWidgetHost 호스팅
-    SSayuHealthBar ..> UAbilitySystemComponent : 약참조 + AddSP 구독
-    UAbilitySystemComponent *-- USayuAttributeSet_Combat
-    SSayuHealthBar ..> FSayuHealthBarStyle : const* 빌려씀
-    FSayuStyle o-- FSayuHealthBarStyle : Sayu.HealthBar로 등록·소유
-    FProjectGASModule ..> FSayuStyle : 수명 관리
+    USaytHUDWidget --> SSaytHealthBar : 소유 + NativeWidgetHost 호스팅
+    SSaytHealthBar ..> UAbilitySystemComponent : 약참조 + AddSP 구독
+    UAbilitySystemComponent *-- USaytAttributeSet_Combat
+    SSaytHealthBar ..> FSaytHealthBarStyle : const* 빌려씀
+    FSaytStyle o-- FSaytHealthBarStyle : Sayt.HealthBar로 등록·소유
+    FProjectSaytModule ..> FSaytStyle : 수명 관리
 ```
 
 ### 시퀀스: 피격 1회의 전체 수명
@@ -62,9 +62,9 @@ classDiagram
 ```mermaid
 sequenceDiagram
     participant Player as 피격(GE 적용)
-    participant AS as USayuAttributeSet_Combat
+    participant AS as USaytAttributeSet_Combat
     participant ASC as ASC 델리게이트
-    participant Bar as SSayuHealthBar
+    participant Bar as SSaytHealthBar
     participant Slate as Slate FastPath
 
     Player->>AS: GameplayEffect 적용

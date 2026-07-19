@@ -85,7 +85,7 @@ void ASaytCharacter::OnBasicAttackInput(const struct FInputActionValue& Value)
 {
 	if (!AbilitySystemComponent)
 	{
-		return;;
+		return;
 	}
 	
 	const FGameplayTag LightAttackTag = FGameplayTag::RequestGameplayTag(FName("Ability.Attack.Light"));
@@ -390,9 +390,7 @@ void ASaytCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-// Called every frame
 void ASaytCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	// 지금은 비어있음. 나중에 필요하면 채울 것
 }

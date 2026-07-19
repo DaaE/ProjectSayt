@@ -1,5 +1,24 @@
 # 리네이밍 + 주석 스윕 작업 지시서
 
+> **[완료] 2026-07-19 작업 완료.** 이 문서는 실행 지시서가 아니라 이력 참조용입니다.
+> 문서 내 `Sayu`/`ProjectGAS` 표기는 리네임 **대상**으로서 의도적으로 원문 유지합니다.
+>
+> **실제 결과와 다른 부분:**
+> - 2단계에 `Binaries/` 삭제가 누락되어 있었음 — 실제로는 `Intermediate/`와 함께 삭제 필요
+> - 2단계의 "구 CoreRedirects는 3단계까지 유지" 판단은 틀렸음 — 구 리다이렉트의
+>   `NewName`이 죽은 경로가 되면서 `GE_ComboWindow`, `GE_Cooldown_BasicAttack` 등
+>   구버전 에셋이 부모 클래스를 못 찾음. 3단계 진입 시 `NewName`을 최종 목적지로
+>   갱신해야 했음(중간 경유 없이 직접 점프)
+> - 3단계 리다이렉트 `OldName`의 모듈 경로: 구 모듈(`/Script/ProjectGAS`) 기준과
+>   신 모듈(`/Script/ProjectSayt`) 기준 **양쪽 모두 등록**해야 안전했음
+> - 3단계 클래스 목록에 `UENUM`(`ESayuPlacementHighlight`)과
+>   비-USTRUCT 구조체(`FSayuDamageStatics`)가 누락되어 있었음
+> - `Config/DefaultGame.ini`의 `PrimaryAssetTypesToScan` / `AssetBaseClass`,
+>   `USaytGameDataSettings::CategoryName` 문자열이 지시 목록에서 빠져 있었음
+> - 4단계(주석 스윕)는 연기 — 후반 Phase에서 코드 재방문 시 점진 정리로 전환
+>
+> 관련: `Docs/BUILD_TROUBLESHOOTING.md`(빌드 환경 문제)
+
 > 실행 모델: 이 문서는 단독 사양서다. 세션 시작 시 이 문서와 `CONVENTIONS.md`를 읽고,
 > 아래 단계 순서대로 진행하며 각 단계 끝의 검증을 통과한 뒤에만 다음 단계로 간다.
 > 결정이 필요한 모호한 지점이 나오면 임의 판단하지 말고 DaaE에게 질문한다.
