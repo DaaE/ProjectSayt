@@ -5,5 +5,5 @@
 
 USaytGameDataSettings::USaytGameDataSettings()
 {
-	CategoryName = TEXT("Sayu");
+	CategoryName = TEXT("Sayt");
 }
