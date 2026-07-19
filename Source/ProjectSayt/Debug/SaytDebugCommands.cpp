@@ -12,15 +12,20 @@
 // [Phase 12 정리 대상] 아래 커맨드들은 개발 검증용입니다.
 // ─────────────────────────────────────────────────────────────
 
+#include "CoreMinimal.h"
+
 #if !UE_BUILD_SHIPPING
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
+#include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "SaytLogChannels.h"
+#include "UI/SaytSegmentedHealth.h"
 #include "UI/Slate/SSaytHealthBar.h"
 #include "UI/Slate/SSaytTuningPanel.h"
 #include "Widgets/Layout/SBox.h"
@@ -126,6 +131,65 @@ namespace SaytHealthBarDebug
 
 	static FDelegateHandle CleanupHandle = FWorldDelegates::OnWorldCleanup.AddLambda(
 		[](UWorld*, bool, bool) { BarRoot.Reset(); });
+}
+
+// ═════════════════════════════════════════════════════════════
+// Phase 8 Stage 2 — 세그먼트 체력 매핑 검증
+// ═════════════════════════════════════════════════════════════
+namespace SaytSegmentedHealthDebug
+{
+	static void LogOne(float Health, float MaxHealth, int32 SegmentCount,
+		const FSaytSegmentedHealthState* Previous)
+	{
+		const FSaytSegmentedHealthState S = Previous
+			? FSaytSegmentedHealth::Calculate(Health, MaxHealth, SegmentCount, *Previous)
+			: FSaytSegmentedHealth::Calculate(Health, MaxHealth, SegmentCount);
+
+		UE_LOG(LogSaytUI, Log, TEXT("[SegHealth] HP %8.2f / %.0f (구슬 %d) → 남은 구슬 %d, 바 %6.2f%%%s"),
+			Health, MaxHealth, SegmentCount,
+			S.RemainingOrbs, S.SegmentPercent * 100.f,
+			S.bSegmentBroken ? TEXT("  ** 세그먼트 파괴 **") : TEXT(""));
+	}
+
+	// 인자 없이: 고정 경계 케이스 스위트 + 하강 스윕(파괴 신호 검증)
+	// 인자 3개: Sayt.SegHealth.Test <Health> <MaxHealth> <SegmentCount> 단발 계산
+	static void RunTest(const TArray<FString>& Args)
+	{
+		if (Args.Num() >= 3)
+		{
+			LogOne(FCString::Atof(*Args[0]), FCString::Atof(*Args[1]),
+				FCString::Atoi(*Args[2]), nullptr);
+			return;
+		}
+
+		const float MaxHealth = 3000.f;
+		const int32 Orbs = 3;
+
+		UE_LOG(LogSaytUI, Log, TEXT("[SegHealth] ── 경계 케이스 스위트 (3000, 구슬 3) ──"));
+		const float Cases[] = { 3000.f, 2500.f, 2000.f, 2000.01f, 1999.9f, 1.f, 0.f, -50.f, 3500.f };
+		for (int32 i = 0; i < UE_ARRAY_COUNT(Cases); ++i)
+		{
+			LogOne(Cases[i], MaxHealth, Orbs, nullptr);
+		}
+
+		UE_LOG(LogSaytUI, Log, TEXT("[SegHealth] ── 하강 스윕 (파괴 신호 검증) ──"));
+		FSaytSegmentedHealthState Prev;
+		Prev = FSaytSegmentedHealth::Calculate(3000.f, MaxHealth, Orbs);
+		const float Sweep[] = { 2400.f, 1800.f, 600.f, 0.f };
+		for (int32 i = 0; i < UE_ARRAY_COUNT(Sweep); ++i)
+		{
+			const FSaytSegmentedHealthState Next =
+				FSaytSegmentedHealth::Calculate(Sweep[i], MaxHealth, Orbs, Prev);
+			LogOne(Sweep[i], MaxHealth, Orbs, &Prev);
+			Prev = Next;
+		}
+	}
+
+	static FAutoConsoleCommand SegHealthTestCommand(
+		TEXT("Sayt.SegHealth.Test"),
+		TEXT("세그먼트 체력 매핑 검증. 인자 없이 실행하면 경계 스위트, '<HP> <MaxHP> <구슬수>'로 단발 계산."),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&RunTest)
+	);
 }
 
 #endif // !UE_BUILD_SHIPPING

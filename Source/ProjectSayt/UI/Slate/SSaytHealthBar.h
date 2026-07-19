@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Widgets/SLeafWidget.h"
+#include "Styling/ISlateStyle.h"            // SLATE_STYLE_ARGUMENT 전개에 필요
+#include "Styling/SlateWidgetStyleAsset.h"  // USlateWidgetStyleAsset (상동)
 #include "Types/SlateAttribute.h"      // TSlateAttribute
 #include "Types/WidgetActiveTimerDelegate.h"   // FWidgetActiveTimerDelegate, EActiveTimerReturnType
 #include "GameplayEffectTypes.h"        // FOnAttributeChangeData
