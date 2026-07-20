@@ -27,6 +27,7 @@
 #include "SaytLogChannels.h"
 #include "UI/SaytSegmentedHealth.h"
 #include "UI/Slate/SSaytHealthBar.h"
+#include "UI/Slate/SSaytOrbTray.h"
 #include "UI/Slate/SSaytTuningPanel.h"
 #include "Widgets/Layout/SBox.h"
 
@@ -189,6 +190,87 @@ namespace SaytSegmentedHealthDebug
 		TEXT("Sayt.SegHealth.Test"),
 		TEXT("세그먼트 체력 매핑 검증. 인자 없이 실행하면 경계 스위트, '<HP> <MaxHP> <구슬수>'로 단발 계산."),
 		FConsoleCommandWithArgsDelegate::CreateStatic(&RunTest)
+	);
+}
+
+// ═════════════════════════════════════════════════════════════
+// Phase 8 Stage 2-2 — 구슬 트레이 검증
+// ═════════════════════════════════════════════════════════════
+namespace SaytOrbTrayDebug
+{
+	static TSharedPtr<SWidget> TrayRoot;
+	static TWeakPtr<SSaytOrbTray> TrayWidget;
+	static FDelegateHandle WorldCleanupHandle;
+
+	static void OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
+	{
+		TrayRoot.Reset();
+		TrayWidget.Reset();
+	}
+
+	static void ToggleShow()
+	{
+		if (!GEngine || !GEngine->GameViewport)
+		{
+			return;
+		}
+
+		if (!WorldCleanupHandle.IsValid())
+		{
+			WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&OnWorldCleanup);
+		}
+
+		if (TrayRoot.IsValid())
+		{
+			GEngine->GameViewport->RemoveViewportWidgetContent(TrayRoot.ToSharedRef());
+			TrayRoot.Reset();
+			TrayWidget.Reset();
+		}
+		else
+		{
+			TSharedPtr<SSaytOrbTray> Tray;
+			TrayRoot = SNew(SBox)
+				.HAlign(HAlign_Center)
+				.VAlign(VAlign_Top)
+				.Padding(FMargin(0.f, 80.f, 0.f, 0.f))
+				[
+					SAssignNew(Tray, SSaytOrbTray)
+					.OrbCount(4)          // 검증 편의상 4슬롯 (구슬 3개 보스 = 슬롯 2라 좁음)
+					.OrbDiameter(22.f)
+				];
+			TrayWidget = Tray;
+			GEngine->GameViewport->AddViewportWidgetContent(TrayRoot.ToSharedRef());
+		}
+	}
+
+	static void SetRemaining(const TArray<FString>& Args)
+	{
+		TSharedPtr<SSaytOrbTray> Tray = TrayWidget.Pin();
+		if (!Tray.IsValid())
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[OrbTray] 트레이가 없습니다. Sayt.OrbTray.Show 먼저 실행하세요."));
+			return;
+		}
+		
+		if (Args.Num() < 1)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[OrbTray] 사용법: Sayt.OrbTray.Set <남은 구슬 수>"));
+			return;
+		}
+		
+		Tray->SetRemainingOrbs(FCString::Atoi(*Args[0]));
+	}
+
+	static FAutoConsoleCommand ShowCommand(
+		TEXT("Sayt.OrbTray.Show"),
+		TEXT("구슬 트레이 검증 위젯을 뷰포트에 켜고 끕니다."),
+		FConsoleCommandDelegate::CreateStatic(&ToggleShow)
+	);
+
+	static FAutoConsoleCommand SetCommand(
+		TEXT("Sayt.OrbTray.Set"),
+		TEXT("구슬 트레이의 남은 구슬 수를 설정합니다. 사용법: Sayt.OrbTray.Set <n>"),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&SetRemaining)
 	);
 }
 
