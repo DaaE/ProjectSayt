@@ -105,6 +105,17 @@ void SSaytHealthBar::SetBackgroundTint(const FSlateColor& InTint)
 	BackgroundTintAttribute.Set(*this, InTint);
 }
 
+void SSaytHealthBar::SetPercentDirect(float InPercent)
+{
+	// 내부 상태를 '비율 그 자체'로 정규화 (CurrentHealth=비율, MaxHealth=1).
+	// GetHealthPercent가 비율/1 = 비율을 돌려주므로, 고스트를 포함한
+	// 기존 파이프라인 전체를 분기 없이 재사용한다 — 새 모드 플래그 불필요
+	CurrentHealth = FMath::Clamp(InPercent, 0.f, 1.f);
+	MaxHealth = 1.f;
+	SyncGhostToPercent();
+	Invalidate(EInvalidateWidgetReason::Paint);
+}
+
 void SSaytHealthBar::HandleHealthChanged(const FOnAttributeChangeData& Data)
 {
 	if (Data.NewValue == Data.OldValue) { return; }   // 무변화 방송 필터

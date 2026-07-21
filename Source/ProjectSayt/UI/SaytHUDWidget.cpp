@@ -5,7 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Components/NativeWidgetHost.h"
-#include "UI/Slate/SSaytHealthBar.h"
+#include "UI/Slate/SSaytHealthDisplay.h"
 
 void USaytHUDWidget::NativeOnInitialized()
 {
@@ -13,9 +13,9 @@ void USaytHUDWidget::NativeOnInitialized()
 	
 	if (HealthBarHost)
 	{
-		// Slate 바 생성 → UMG 트리에 안착 → 플레이어 ASC에 바인딩.
-		// (초기 1회 Pull은 BindToASC 내부가 담당 — 구 SyncInitialHealthFromASC의 역할 승계)
-		HealthBar = SNew(SSaytHealthBar);
+		// 범용 표시 단위 생성(기본 SegmentCount 1 → 트레이 없음, Stage 1과 동일 룩)
+		// → UMG 트리에 안착 → 플레이어 ASC에 바인딩 (초기 Pull은 BindToASC 내부 담당)
+		HealthBar = SNew(SSaytHealthDisplay);
 		HealthBarHost->SetContent(HealthBar.ToSharedRef());
 		
 		if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(GetOwningPlayerPawn()))

@@ -27,6 +27,7 @@
 #include "SaytLogChannels.h"
 #include "UI/SaytSegmentedHealth.h"
 #include "UI/Slate/SSaytHealthBar.h"
+#include "UI/Slate/SSaytHealthDisplay.h"
 #include "UI/Slate/SSaytOrbTray.h"
 #include "UI/Slate/SSaytTuningPanel.h"
 #include "Widgets/Layout/SBox.h"
@@ -271,6 +272,120 @@ namespace SaytOrbTrayDebug
 		TEXT("Sayt.OrbTray.Set"),
 		TEXT("구슬 트레이의 남은 구슬 수를 설정합니다. 사용법: Sayt.OrbTray.Set <n>"),
 		FConsoleCommandWithArgsDelegate::CreateStatic(&SetRemaining)
+	);
+}
+
+// ═════════════════════════════════════════════════════════════
+// Phase 8 Stage 2-3 — 체력 표시 단위(매핑→분배) 검증
+// ═════════════════════════════════════════════════════════════
+namespace SaytHealthDisplayDebug
+{
+	static TSharedPtr<SWidget> DisplayRoot;
+	static TWeakPtr<SSaytHealthDisplay> DisplayWidget;
+	static FDelegateHandle WorldCleanupHandle;
+
+	static constexpr float TestMaxHealth = 4000.f;   // 세그먼트 4 → 구슬 3, 세그먼트당 1000
+
+	static void OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
+	{
+		DisplayRoot.Reset();
+		DisplayWidget.Reset();
+	}
+
+	static void ToggleShow()
+	{
+		if (!GEngine || !GEngine->GameViewport)
+		{
+			return;
+		}
+
+		if (!WorldCleanupHandle.IsValid())
+		{
+			WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&OnWorldCleanup);
+		}
+
+		if (DisplayRoot.IsValid())
+		{
+			GEngine->GameViewport->RemoveViewportWidgetContent(DisplayRoot.ToSharedRef());
+			DisplayRoot.Reset();
+			DisplayWidget.Reset();
+		}
+		else
+		{
+			TSharedPtr<SSaytHealthDisplay> Display;
+			DisplayRoot = SNew(SBox)
+				.HAlign(HAlign_Center)
+				.VAlign(VAlign_Top)
+				.Padding(FMargin(0.f, 60.f, 0.f, 0.f))
+				[
+					SAssignNew(Display, SSaytHealthDisplay)
+					.SegmentCount(4)
+					.DesiredBarSize(FVector2D(500.f, 26.f))
+				];
+			DisplayWidget = Display;
+			GEngine->GameViewport->AddViewportWidgetContent(DisplayRoot.ToSharedRef());
+
+			Display->SetHealthDirect(TestMaxHealth, TestMaxHealth);   // 만피에서 출발
+		}
+	}
+
+	static void SetHealth(const TArray<FString>& Args)
+	{
+		TSharedPtr<SSaytHealthDisplay> Display = DisplayWidget.Pin();
+		if (!Display.IsValid())
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[HealthDisplay] 표시 단위가 없습니다. Sayt.HealthDisplay.Show 먼저 실행하세요."));
+			return;
+		}
+		if (Args.Num() < 1)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[HealthDisplay] 사용법: Sayt.HealthDisplay.SetHealth <hp>"));
+			return;
+		}
+		Display->SetHealthDirect(FCString::Atof(*Args[0]), TestMaxHealth);
+	}
+
+	static void BindPlayer()
+	{
+		TSharedPtr<SSaytHealthDisplay> Display = DisplayWidget.Pin();
+		if (!Display.IsValid())
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[HealthDisplay] 표시 단위가 없습니다. Sayt.HealthDisplay.Show 먼저 실행하세요."));
+			return;
+		}
+
+		UWorld* World = (GEngine && GEngine->GameViewport) ? GEngine->GameViewport->GetWorld() : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+		UAbilitySystemComponent* ASC = Pawn ? UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Pawn) : nullptr;
+		if (!ASC)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[HealthDisplay] 플레이어 ASC를 찾지 못했습니다."));
+			return;
+		}
+
+		// 매핑은 비율 기반이라 플레이어의 실제 MaxHealth가 얼마든 세그먼트가 성립한다
+		// — 고체력 더미 NPC 없이도 실 ASC 경로(Push+Pull) 검증 가능
+		Display->BindToASC(ASC);
+		UE_LOG(LogSaytUI, Log, TEXT("[HealthDisplay] 플레이어 ASC에 바인딩 완료"));
+	}
+
+	static FAutoConsoleCommand ShowCommand(
+		TEXT("Sayt.HealthDisplay.Show"),
+		TEXT("세그먼트 체력 표시 단위(바+트레이)를 뷰포트에 켜고 끕니다."),
+		FConsoleCommandDelegate::CreateStatic(&ToggleShow)
+	);
+
+	static FAutoConsoleCommand SetHealthCommand(
+		TEXT("Sayt.HealthDisplay.SetHealth"),
+		TEXT("표시 단위에 체력을 직접 주입합니다. 사용법: Sayt.HealthDisplay.SetHealth <hp> (최대 4000 고정)"),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&SetHealth)
+	);
+
+	static FAutoConsoleCommand BindPlayerCommand(
+		TEXT("Sayt.HealthDisplay.BindPlayer"),
+		TEXT("표시 단위를 플레이어 ASC에 바인딩합니다 (실 GAS 경로 검증)."),
+		FConsoleCommandDelegate::CreateStatic(&BindPlayer)
 	);
 }
 

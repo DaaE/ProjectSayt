@@ -42,6 +42,10 @@ public:
 	void BindToASC(UAbilitySystemComponent* InASC);
 	void UnbindFromASC();   // 공개인 이유: Stage 2 재활용(다른 대상으로 재바인딩)의 전제
 
+	/** ASC 구독 없이 표시 비율만 외부에서 직접 지정 (Compound 조립용).
+     *  BindToASC와 상호 배타 — 바인딩하면 초기 Pull이 이 값을 덮어씀 */
+     void SetPercentDirect(float InPercent);
+
 	// ── 줄 체력용 런타임 색 (3b에서 TSlateAttribute로 전환 예정) ──
 	void SetFillTint(const FSlateColor& InTint);
 	void SetBackgroundTint(const FSlateColor& InTint);

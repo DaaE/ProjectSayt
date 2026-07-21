@@ -7,7 +7,7 @@
 #include "SaytHUDWidget.generated.h"
 
 class UNativeWidgetHost;
-class SSaytHealthBar;
+class SSaytHealthDisplay;
 
 UCLASS()
 class PROJECTSAYT_API USaytHUDWidget : public UUserWidget
@@ -27,5 +27,6 @@ protected:
 	
 private:
 	// UObject(HUD 위젯)가 Slate 위젯을 '소유'하는 표준 형태 — TSharedPtr 강참조
-	TSharedPtr<SSaytHealthBar> HealthBar;
+	// 2-3부터 범용 표시 단위로 이관 (SegmentCount 1 = Stage 1과 동일 형태)
+	TSharedPtr<SSaytHealthDisplay> HealthBar;
 };
