@@ -23,16 +23,16 @@ public:
 		: _OrbCount(2)
 		, _OrbDiameter(18.f)
 		, _OrbSpacing(10.f)
-		, _FilledColor(FLinearColor(1.f, 0.82f, 0.25f))          // 호박색 — 2-4에서 스타일로 이관
-		, _EmptyOutlineColor(FLinearColor(1.f, 1.f, 1.f, 0.35f)) // 빈 슬롯 외곽선
+		, _FilledBrushOverride(nullptr)   // 미지정 시 스타일 등록소 조회
+		, _EmptyBrushOverride(nullptr)
 		{
 		}
 		/** 구슬 슬롯 수 — 생성 시 고정. DesiredSize의 유일한 변수 */
 		SLATE_ARGUMENT(int32, OrbCount)
 		SLATE_ARGUMENT(float, OrbDiameter)
 		SLATE_ARGUMENT(float, OrbSpacing)
-		SLATE_ARGUMENT(FLinearColor, FilledColor)
-		SLATE_ARGUMENT(FLinearColor, EmptyOutlineColor)
+		SLATE_ARGUMENT(const FSlateBrush*, FilledBrushOverride)
+		SLATE_ARGUMENT(const FSlateBrush*, EmptyBrushOverride)
 	SLATE_END_ARGS()
 
 	SSaytOrbTray();   // TSlateAttribute 멤버가 생성자 초기화를 요구 (SSaytHealthBar와 동일 사정)

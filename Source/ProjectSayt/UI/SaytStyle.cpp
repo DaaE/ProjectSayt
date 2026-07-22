@@ -4,6 +4,10 @@
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Misc/Paths.h"
 #include "Slate/SaytHealthBarWidgetStyle.h"
+#include "Brushes/SlateImageBrush.h"
+
+// 엔진 스타일 파일들의 표준 관용구 — 콘텐츠 루트 기준 상대 경로로 이미지 브러시 정의
+#define IMAGE_BRUSH(RelativePath, ...) FSlateImageBrush(Instance->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
 
 TSharedPtr<FSlateStyleSet> FSaytStyle::Instance = nullptr;
 
@@ -67,6 +71,16 @@ void FSaytStyle::Initialize()
 		.SetTickColor(FLinearColor::Transparent)
 		.SetEnableGhost(false));   // 일반몹: 잔상 없음
 	
+	// ── 구슬 텍스처 브러시 (느슨한 파일 — Content/UI/HealthDisplay/*.png) ──
+	// 텍스처는 백색 계조, 색은 여기 틴트가 전담 (원색 흰색 + 틴트 곱셈 관례)
+	// ⚠️ 패키징 부채: 느슨한 파일은 스테이징 설정 필요 — Phase 12 체크리스트 참조
+	Instance->Set("Sayt.HealthDisplay.OrbFilled",
+		new IMAGE_BRUSH("HealthDisplay/T_UI_Orb_Filled_32", FVector2D(32.f, 32.f),
+		FLinearColor(0.66f, 0.545f, 0.98f)));                      // 바이올렛 #A88BFA
+	
+	Instance->Set("Sayt.HealthDisplay.OrbEmpty",
+		new IMAGE_BRUSH("HealthDisplay/T_UI_Orb_Empty_32", FVector2D(32.f, 32.f),
+		FLinearColor(1.f, 1.f, 1.f, 0.35f)));                      // 빈 슬롯: 백색 35%
 
 	FSlateStyleRegistry::RegisterSlateStyle(*Instance);
 }

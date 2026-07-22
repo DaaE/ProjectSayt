@@ -2,7 +2,7 @@
 
 
 #include "SSaytOrbTray.h"
-#include "Brushes/SlateRoundedBoxBrush.h"
+#include "UI/SaytStyle.h"
 #include "Rendering/DrawElements.h"
 
 SLATE_IMPLEMENT_WIDGET(SSaytOrbTray)
@@ -24,11 +24,11 @@ void SSaytOrbTray::Construct(const FArguments& InArgs)
 	OrbDiameter = InArgs._OrbDiameter;
 	OrbSpacing = InArgs._OrbSpacing;
 
-	// 원 = 코너 반경을 한 변의 절반으로 준 RoundedBox.
-	// 찬 구슬 = 단색 채움 / 빈 구슬 = 투명 채움 + 외곽선 (FrameBrush와 같은 4인자 생성자)
-	const float Radius = OrbDiameter * 0.5f;
-	FilledBrush = FSlateRoundedBoxBrush(InArgs._FilledColor, Radius);
-	EmptyBrush = FSlateRoundedBoxBrush(FLinearColor::Transparent, Radius, InArgs._EmptyOutlineColor, 1.5f);
+	// 브러시 = '그리기 명세'를 통째로 받는다. 미지정이면 등록소의 텍스처 브러시.
+	// RoundedBox(코드) → 텍스처 전환이 위젯 그리기 코드 무수정으로 끝나는 이유:
+	// OnPaint는 처음부터 FSlateBrush라는 추상만 알았기 때문
+	FilledBrush = InArgs._FilledBrushOverride ? *InArgs._FilledBrushOverride : *FSaytStyle::Get().GetBrush("Sayt.HealthDisplay.OrbFilled");
+	EmptyBrush = InArgs._EmptyBrushOverride ? *InArgs._EmptyBrushOverride : *FSaytStyle::Get().GetBrush("Sayt.HealthDisplay.OrbEmpty");
 
 	RemainingOrbsAttribute.Set(*this, 0);
 

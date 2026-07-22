@@ -15,8 +15,21 @@ void SSaytHealthDisplay::Construct(const FArguments& InArgs)
 	SegmentCount = FMath::Max(InArgs._SegmentCount, 1);
 
 	TSharedRef<SVerticalBox> Root = SNew(SVerticalBox);
+	
+	// 슬롯 1: 트레이 — 바 '위' 좌측 정렬 (좌상단 배치 결정, 2-4)
+	if (SegmentCount > 1)
+	{
+		Root->AddSlot()
+			.AutoHeight()
+			.HAlign(HAlign_Left)
+			.Padding(2.f, 0.f, 0.f, 4.f)
+			[
+				SAssignNew(OrbTray, SSaytOrbTray)
+				.OrbCount(SegmentCount - 1)
+			];
+	}
 
-	// 슬롯 1: 체력바 — 크기는 배치 맥락 소관이라 인자 전달 (Stage 1 계약 승계)
+	// 슬롯 2: 체력바 — 크기는 배치 맥락 소관이라 인자 전달 (Stage 1 계약 승계)
 	Root->AddSlot()
 		.AutoHeight()
 		[
@@ -24,20 +37,6 @@ void SSaytHealthDisplay::Construct(const FArguments& InArgs)
 			.Style(InArgs._BarStyle)
 			.DesiredBarSize(InArgs._DesiredBarSize)
 		];
-
-	// 슬롯 2: 트레이 — 데이터가 형태를 결정. 세그먼트 1이면 숨김이 아니라 '미생성'.
-	// (SegmentCount는 생성 시 고정이므로 껐다 켤 일이 없음 — 안 만드는 게 가장 싸다)
-	if (SegmentCount > 1)
-	{
-		Root->AddSlot()
-			.AutoHeight()
-			.HAlign(HAlign_Center)
-			.Padding(0.f, 6.f, 0.f, 0.f)
-			[
-				SAssignNew(OrbTray, SSaytOrbTray)
-				.OrbCount(SegmentCount - 1)
-			];
-	}
 
 	ChildSlot
 	[
