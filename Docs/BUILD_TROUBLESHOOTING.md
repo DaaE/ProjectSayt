@@ -112,6 +112,38 @@ UECommon.props(15,3): Error MSB4019 :
 
 ---
 
+## 사건 3 — RiderLink RD.dll 로드 실패 → 엔진 자동화 모듈 실종 발견 → Verify로 근치
+
+### 증상
+- 에디터 스플래시 단계에서 종료: 'RiderLink' 플러그인 로드 실패, 'RD' 모듈을 로드할 수 없음
+- 로그 시그니처 (Saved/Logs):
+  - UnrealEditor-RD.dll 로드 실패, GetLastError=4551 — 파일은 존재하는데 OS가 로드 거부
+    (파일이 없을 때의 126 + File does not exist 조합과 구분됨)
+  - 이후 RiderLink/RiderBlueprint/RiderLogging.dll의 126 에러는 전부
+    Missing import: UnrealEditor-RD.dll — RD 하나가 죽어서 생긴 연쇄
+
+### 원인
+- 1차 원인: 프로젝트 쪽 RiderLink 플러그인(Plugins/Developer/RiderLink)의 RD.dll 바이너리 손상
+  (불완전 기록으로 추정 — 에러 코드 4551의 정확한 명칭은 미확정)
+- 2차 발견: 수리 경로인 RiderLink 재설치가 UAT(AutomationTool)를 기동시키자
+  엔진 배송본 DLL 실종이 드러남 —
+  Engine/Intermediate/ScriptModules/Android.Automation.json 기록은 있는데
+  대응하는 Engine/Binaries/DotNET/AutomationTool/.../Android.Automation.dll이 없음
+- 뿌리: 과거 솔루션 전체 빌드가 엔진 C# 도구를 재빌드하며 Launcher 설치본을 훼손
+  (본 문서 상단의 만성 이슈, ScriptGeneratorUbtPlugin/ref 수정 흔적과 같은 계열)
+- 참고: RiderLink 설치 위치 옵션(게임/엔진)은 결과물 위치만 결정 —
+  빌드 자체는 항상 엔진의 UAT가 수행하므로 엔진 도구 체인이 건강해야 함
+
+### 해결
+1. Epic Games Launcher → 라이브러리 → UE 5.7 → 확인(Verify) 실행 (미뤄뒀던 것)
+2. Rider → Settings → Unreal Engine → RiderLink → 게임에 RiderLink 설치 (재설치)
+3. 에디터 정상 기동 확인
+- 효과: RiderLink 수리 + 엔진 오염 청소 동시 달성.
+  만성 이슈(빌드 성공 → 에디터 기동 실패 → Binaries 삭제 반복)의 재발 조건 자체가 제거됨
+- 예방: RiderLink 자동 업데이트 옵션 활성화 권장 (설치 위치가 게임이면 엔진은 안 건드림)
+
+---
+
 ## 최종 해결 조합
 
 두 에러는 **서로 다른 원인**이었고 각각 다른 방법으로 잡아야 했다.
