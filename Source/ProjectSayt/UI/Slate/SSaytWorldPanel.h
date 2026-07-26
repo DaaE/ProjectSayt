@@ -31,6 +31,10 @@ public:
 		FVector GetWorldLocation() const { return WorldLocation; }
 		void SetWorldLocation(const FVector& InLocation) { WorldLocation = InLocation; }
 		
+		// 갱신 단계가 기록하고, OnArrangeChildren이 읽는 캐시
+		FVector2D CachedPixelPosition = FVector2D::ZeroVector;
+		bool bCachedInFront = false;
+		
 	private:
 		FVector WorldLocation = FVector::ZeroVector;
 	};
@@ -55,6 +59,13 @@ public:
 	virtual FChildren* GetChildren() override;
 	
 private:
+	/** 갱신 타이머가 없으면 등록 (첫 자식 추가 시점에 점등) */
+	void EnsureUpdateTimer();
+	
+	/** 카메라 표본을 뜨고 Slot 캐시를 갱신 — 변화가 있을 때만 Layout invalidation 발생 */
+	EActiveTimerReturnType UpdateProjections(double InCurrentTime, float InDeltaTime);
+		
 	TPanelChildren<FSlot> Children;
 	TWeakObjectPtr<APlayerController> PlayerController;
+	TSharedPtr<FActiveTimerHandle> UpdateTimerHandle;
 };
