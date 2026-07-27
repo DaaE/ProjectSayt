@@ -28,6 +28,7 @@
 #include "Character/SaytNPCCharacter.h"
 #include "EngineUtils.h"
 #include "UI/Slate/SSaytWorldPanel.h"
+#include "UI/SaytIndicatorManagerComponent.h"
 #include "Widgets/Colors/SColorBlock.h"
 #include "UI/SaytSegmentedHealth.h"
 #include "UI/Slate/SSaytHealthBar.h"
@@ -505,11 +506,9 @@ namespace SaytWorldPanelTest
 		for (TActorIterator<ASaytNPCCharacter> It(World); It; ++It)
 		{
 			ASaytNPCCharacter* NPC = *It;
-			const float HalfHeight = NPC->GetSimpleCollisionHalfHeight();
-			const FVector HeadLocation = NPC->GetActorLocation() + FVector(0.f, 0.f, HalfHeight + 30.f);
-
+			
 			ActivePanel->AddSlot()
-				.WorldLocation(HeadLocation)
+				.TrackedActor(NPC)
 				[
 					SNew(SBox)
 					.WidthOverride(96.f)
@@ -531,6 +530,138 @@ namespace SaytWorldPanelTest
 		TEXT("Sayt.WorldPanel.Show"),
 		TEXT("월드 패널 실험 토글 - 배치된 NPC 머리 위에 색 블록 표시"),
 		FConsoleCommandDelegate::CreateStatic(&ToggleShow));
+}
+
+// ═════════════════════════════════════════════════════════════
+// Phase 8 Stage 2-8 — 몬스터 스폰/제거 하네스 (사망 로직은 Phase 11 소관)
+// ═════════════════════════════════════════════════════════════
+namespace SaytMobHarness
+{
+	static TArray<TWeakObjectPtr<AActor>> SpawnedMobs;
+
+	static UWorld* GetPIEWorld()
+	{
+		return (GEngine && GEngine->GameViewport) ? GEngine->GameViewport->GetWorld() : nullptr;
+	}
+
+	static void SpawnMob()
+	{
+		UWorld* World = GetPIEWorld();
+		if (!World)
+		{
+			return;
+		}
+
+		APlayerController* PC = World->GetFirstPlayerController();
+		APawn* PlayerPawn = PC ? PC->GetPawn() : nullptr;
+		if (!PlayerPawn)
+		{
+			return;
+		}
+
+		// 레벨에 이미 배치된 NPC의 클래스를 빌려 쓴다 — BP 경로를 코드에 박지 않기 위해
+		UClass* MobClass = nullptr;
+		for (TActorIterator<ASaytNPCCharacter> It(World); It; ++It)
+		{
+			MobClass = It->GetClass();
+			break;
+		}
+		
+		if (!MobClass)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[몹] 레벨에 배치된 NPC가 없어 클래스를 찾지 못했습니다"));
+			return;
+		}
+
+		const FVector SpawnLocation = PlayerPawn->GetActorLocation()
+			+ PlayerPawn->GetActorForwardVector() * 400.f
+			+ PlayerPawn->GetActorRightVector() * FMath::FRandRange(-250.f, 250.f);
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AActor* NewMob = World->SpawnActor<AActor>(MobClass, SpawnLocation, PlayerPawn->GetActorRotation(), Params);
+		if (!NewMob)
+		{
+			return;
+		}
+
+		SpawnedMobs.Add(NewMob);
+
+		if (USaytIndicatorManagerComponent* Manager = USaytIndicatorManagerComponent::FindOrAdd(PC))
+		{
+			Manager->AddIndicator(NewMob, ESaytHealthDisplayType::Mob);
+		}
+	}
+
+	/** 가장 최근 스폰분을 파괴 — OnDestroyed 경유 자동 해제 경로 검증용 */
+	static void RemoveMob()
+	{
+		while (SpawnedMobs.Num() > 0)
+		{
+			TWeakObjectPtr<AActor> Last = SpawnedMobs.Pop();
+			if (AActor* Actor = Last.Get())
+			{
+				Actor->Destroy();
+				return;
+			}
+		}
+		UE_LOG(LogSaytUI, Verbose, TEXT("[몹] 제거할 스폰 몹이 없습니다"));
+	}
+
+	/** 파괴하지 않고 목록에서만 해제 — 명시적 해제 경로 검증용 */
+	static void UnregisterMob()
+	{
+		UWorld* World = GetPIEWorld();
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		if (!PC)
+		{
+			return;
+		}
+
+		USaytIndicatorManagerComponent* Manager = USaytIndicatorManagerComponent::FindOrAdd(PC);
+		if (!Manager || Manager->GetIndicators().Num() == 0)
+		{
+			return;
+		}
+
+		Manager->RemoveIndicator(Manager->GetIndicators().Last().Actor.Get());
+	}
+
+	static void ListMobs()
+	{
+		UWorld* World = GetPIEWorld();
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		USaytIndicatorManagerComponent* Manager = PC ? USaytIndicatorManagerComponent::FindOrAdd(PC) : nullptr;
+		if (!Manager)
+		{
+			return;
+		}
+
+		UE_LOG(LogSaytUI, Verbose, TEXT("[몹] 등록 목록 %d개"), Manager->GetIndicators().Num());
+		for (const FSaytIndicatorEntry& Entry : Manager->GetIndicators())
+		{
+			UE_LOG(LogSaytUI, Verbose, TEXT("  - %s (유효=%s)"),
+				Entry.Actor.IsValid() ? *Entry.Actor->GetName() : TEXT("(무효)"),
+				Entry.Actor.IsValid() ? TEXT("예") : TEXT("아니오"));
+		}
+	}
+
+	static FAutoConsoleCommand SpawnCmd(TEXT("Sayt.Mob.Spawn"),
+		TEXT("플레이어 전방에 몹을 스폰하고 인디케이터에 등록"),
+		FConsoleCommandDelegate::CreateStatic(&SpawnMob));
+
+	static FAutoConsoleCommand RemoveCmd(TEXT("Sayt.Mob.Remove"),
+		TEXT("최근 스폰 몹을 파괴 (자동 해제 경로 검증)"),
+		FConsoleCommandDelegate::CreateStatic(&RemoveMob));
+
+	static FAutoConsoleCommand UnregisterCmd(TEXT("Sayt.Mob.Unregister"),
+		TEXT("파괴 없이 인디케이터 등록만 해제 (명시적 해제 경로 검증)"),
+		FConsoleCommandDelegate::CreateStatic(&UnregisterMob));
+
+	static FAutoConsoleCommand ListCmd(TEXT("Sayt.Mob.List"),
+		TEXT("현재 인디케이터 등록 목록 출력"),
+		FConsoleCommandDelegate::CreateStatic(&ListMobs));
 }
 
 #endif // !UE_BUILD_SHIPPING

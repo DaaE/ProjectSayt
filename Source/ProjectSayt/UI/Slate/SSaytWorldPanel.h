@@ -23,23 +23,25 @@ public:
 	{
 	public:
 		SLATE_SLOT_BEGIN_ARGS(FSlot, TSlotBase<FSlot>)
-			SLATE_ARGUMENT(FVector, WorldLocation)
+			SLATE_ARGUMENT(TWeakObjectPtr<AActor>, TrackedActor)
 		SLATE_SLOT_END_ARGS()
 		
 		void Construct(const FChildren& SlotOwner, FSlotArguments&& InArgs);
 		
-		FVector GetWorldLocation() const { return WorldLocation; }
-		void SetWorldLocation(const FVector& InLocation) { WorldLocation = InLocation; }
+		/** 추적 대상. 약참조 — 대상이 사라져도 안전하게 무효로 감지된다 */
+		TWeakObjectPtr<AActor> TrackedActor;
 		
 		// 갱신 단계가 기록하고, OnArrangeChildren이 읽는 캐시
 		FVector2D CachedPixelPosition = FVector2D::ZeroVector;
 		bool bCachedInFront = false;
-		
-	private:
-		FVector WorldLocation = FVector::ZeroVector;
 	};
 	
-	SLATE_BEGIN_ARGS(SSaytWorldPanel){}
+	SLATE_BEGIN_ARGS(SSaytWorldPanel)
+		: _HeadMargin(30.f)
+		{
+		}
+		/** 액터 충돌 상단에서 위로 띄울 여유 (월드 단위) */
+		SLATE_ARGUMENT(float, HeadMargin)
 	SLATE_END_ARGS()
 	
 	SSaytWorldPanel();
@@ -50,6 +52,8 @@ public:
 	using FScopedWidgetSlotArguments = TPanelChildren<FSlot>::FScopedWidgetSlotArguments;
 	FScopedWidgetSlotArguments AddSlot();
 	int32 RemoveSlot(const TSharedRef<SWidget>& SlotWidget);
+	/** 추적 액터로 슬롯 제거. 이미 파괴된 액터도 약참조 비교로 정확히 찾는다 */
+	int32 RemoveSlotForActor(const TWeakObjectPtr<AActor>& InActor);
 	void ClearChildren();
 	
 	// ── 이론의 실체화 ②: 2패스 레이아웃의 두 축 ──
@@ -68,4 +72,5 @@ private:
 	TPanelChildren<FSlot> Children;
 	TWeakObjectPtr<APlayerController> PlayerController;
 	TSharedPtr<FActiveTimerHandle> UpdateTimerHandle;
+	float HeadMargin = 30.f;
 };

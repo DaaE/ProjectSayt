@@ -8,6 +8,9 @@
 
 class UNativeWidgetHost;
 class SSaytHealthDisplay;
+class SSaytWorldPanel;
+class USaytIndicatorManagerComponent;
+struct FSaytIndicatorEntry;
 
 UCLASS()
 class PROJECTSAYT_API USaytHUDWidget : public UUserWidget
@@ -26,7 +29,18 @@ protected:
 	TObjectPtr<UNativeWidgetHost> HealthBarHost;
 	
 private:
+	void HandleIndicatorAdded(const FSaytIndicatorEntry& Entry);
+	void HandleIndicatorRemoved(const FSaytIndicatorEntry& Entry);
+	
 	// UObject(HUD 위젯)가 Slate 위젯을 '소유'하는 표준 형태 — TSharedPtr 강참조
 	// 2-3부터 범용 표시 단위로 이관 (SegmentCount 1 = Stage 1과 동일 형태)
 	TSharedPtr<SSaytHealthDisplay> HealthBar;
+	
+	// ── 몬스터 월드 패널 (2-8) ──
+	TSharedPtr<SSaytWorldPanel> WorldPanel;
+	TWeakObjectPtr<USaytIndicatorManagerComponent> IndicatorManager;
+	FDelegateHandle IndicatorAddedHandle;
+	FDelegateHandle IndicatorRemovedHandle;
+	/** 액터 → 그 액터의 바. 해제 시 대칭 정리를 위해 소유자가 들고 있는다 */
+	TMap<TWeakObjectPtr<AActor>, TSharedPtr<SSaytHealthDisplay>> MobDisplays;
 };

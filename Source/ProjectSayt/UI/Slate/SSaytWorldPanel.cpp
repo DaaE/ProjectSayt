@@ -3,6 +3,7 @@
 #include "SSaytWorldPanel.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
+#include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Layout/ArrangedChildren.h"
 #include "SceneView.h"
@@ -10,7 +11,7 @@
 void SSaytWorldPanel::FSlot::Construct(const FChildren& SlotOwner, FSlotArguments&& InArgs)
 {
 	TSlotBase<FSlot>::Construct(SlotOwner, MoveTemp(InArgs));
-	WorldLocation = InArgs._WorldLocation;
+	TrackedActor = InArgs._TrackedActor;
 }
 
 SSaytWorldPanel::SSaytWorldPanel() : Children(this)
@@ -24,6 +25,7 @@ SSaytWorldPanel::SSaytWorldPanel() : Children(this)
 void SSaytWorldPanel::Construct(const FArguments& InArgs, APlayerController* InPlayerController)
 {
 	PlayerController = InPlayerController;
+	HeadMargin = InArgs._HeadMargin;
 }
 
 SSaytWorldPanel::FScopedWidgetSlotArguments SSaytWorldPanel::AddSlot()
@@ -35,6 +37,20 @@ SSaytWorldPanel::FScopedWidgetSlotArguments SSaytWorldPanel::AddSlot()
 int32 SSaytWorldPanel::RemoveSlot(const TSharedRef<SWidget>& SlotWidget)
 {
 	return Children.Remove(SlotWidget);
+}
+
+int32 SSaytWorldPanel::RemoveSlotForActor(const TWeakObjectPtr<AActor>& InActor)
+{
+	for (int32 Index = 0; Index < Children.Num(); ++Index)
+	{
+		// 약참조끼리의 비교는 대상이 이미 파괴된 뒤에도 동일 객체를 정확히 식별한다
+		if (Children[Index].TrackedActor == InActor)
+		{
+			Children.RemoveAt(Index);
+			return Index;
+		}
+	}
+	return INDEX_NONE;
 }
 
 void SSaytWorldPanel::ClearChildren()
@@ -137,9 +153,25 @@ EActiveTimerReturnType SSaytWorldPanel::UpdateProjections(double InCurrentTime, 
 	for (int32 Index = 0; Index < Children.Num(); ++Index)
 	{
 		FSlot& CurSlot = Children[Index];
+		
+		// 대상이 사라졌으면 숨김 처리만 하고 넘어간다 (슬롯 제거는 소유자 책임)
+		AActor* TargetActor = CurSlot.TrackedActor.Get();
+		if (!TargetActor)
+		{
+			if (CurSlot.bCachedInFront)
+			{
+				CurSlot.bCachedInFront = false;
+				bAnyChanged = true;
+			}
+			
+			continue;
+		}
+		
+		// 추적 지점 = 액터 충돌 상단 + 여유. 이 규칙이 이 패널의 정체다
+		const FVector TrackedLocation = TargetActor->GetActorLocation()	+ FVector(0.f, 0.f, TargetActor->GetSimpleCollisionHalfHeight() + HeadMargin);
 
 		FVector2D PixelPos = FVector2D::ZeroVector;
-		const bool bInFront = FSceneView::ProjectWorldToScreen(CurSlot.GetWorldLocation(), ViewRect, ViewProjectionMatrix, PixelPos);
+		const bool bInFront = FSceneView::ProjectWorldToScreen(TrackedLocation, ViewRect, ViewProjectionMatrix, PixelPos);
 
 		if (bInFront != CurSlot.bCachedInFront || !PixelPos.Equals(CurSlot.CachedPixelPosition, 0.01f))
 		{
