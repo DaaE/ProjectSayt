@@ -39,6 +39,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// 입력 바인딩 설정 함수 - Enhanced Input 연결 여기서 함
 		
+	/** HUD 위젯을 파괴하고 새로 만든다 (리스폰 상황 재현 / 생명주기 검증용) */
+	void RebuildHUD();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

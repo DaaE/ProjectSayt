@@ -383,3 +383,23 @@ void ASaytCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);  // 상하 회전
 	}
 }
+
+void ASaytCharacter::RebuildHUD()
+{
+	if (HUDWidgetInstance)
+	{
+		// RemoveFromParent가 NativeDestruct를 유발 → HUD의 정리 코드가 돈다
+		HUDWidgetInstance->RemoveFromParent();
+		HUDWidgetInstance = nullptr;
+	}
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC && HUDWidgetClass)
+	{
+		HUDWidgetInstance = CreateWidget<UUserWidget>(PC, HUDWidgetClass);
+		if (HUDWidgetInstance)
+		{
+			HUDWidgetInstance->AddToViewport();
+		}
+	}
+}

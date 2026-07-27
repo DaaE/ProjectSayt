@@ -26,6 +26,7 @@
 #include "HAL/IConsoleManager.h"
 #include "SaytLogChannels.h"
 #include "Character/SaytNPCCharacter.h"
+#include "Character/SaytCharacter.h"
 #include "EngineUtils.h"
 #include "UI/Slate/SSaytWorldPanel.h"
 #include "UI/SaytIndicatorManagerComponent.h"
@@ -646,6 +647,17 @@ namespace SaytMobHarness
 				Entry.Actor.IsValid() ? TEXT("예") : TEXT("아니오"));
 		}
 	}
+	
+	static void RebuildHUD()
+	{
+		UWorld* World = GetPIEWorld();
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		if (ASaytCharacter* Character = PC ? Cast<ASaytCharacter>(PC->GetPawn()) : nullptr)
+		{
+			UE_LOG(LogSaytUI, Verbose, TEXT("[HUD] 재생성 요청"));
+			Character->RebuildHUD();
+		}
+	}
 
 	static FAutoConsoleCommand SpawnCmd(TEXT("Sayt.Mob.Spawn"),
 		TEXT("플레이어 전방에 몹을 스폰하고 인디케이터에 등록"),
@@ -662,6 +674,10 @@ namespace SaytMobHarness
 	static FAutoConsoleCommand ListCmd(TEXT("Sayt.Mob.List"),
 		TEXT("현재 인디케이터 등록 목록 출력"),
 		FConsoleCommandDelegate::CreateStatic(&ListMobs));
+	
+	static FAutoConsoleCommand RebuildHUDCmd(TEXT("Sayt.HUD.Rebuild"),
+		TEXT("HUD 위젯을 파괴 후 재생성 (리스폰 상황 재현)"),
+		FConsoleCommandDelegate::CreateStatic(&RebuildHUD));
 }
 
 #endif // !UE_BUILD_SHIPPING
