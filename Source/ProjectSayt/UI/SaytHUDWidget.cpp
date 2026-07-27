@@ -11,6 +11,7 @@
 #include "UI/SaytIndicatorManagerComponent.h"
 #include "UI/Slate/SSaytHealthDisplay.h"
 #include "UI/Slate/SSaytWorldPanel.h"
+#include "SaytLogChannels.h"
 
 void USaytHUDWidget::NativeOnInitialized()
 {
@@ -87,6 +88,9 @@ void USaytHUDWidget::NativeDestruct()
 	}
 	MobDisplays.Empty();
 	
+	// 유휴 위젯도 소유자가 들고 있는 강참조이므로 여기서 놓아야 해제된다
+	MobDisplayPool.Empty();
+	
 	if (WorldPanel.IsValid() && GEngine && GEngine->GameViewport)
 	{
 		GEngine->GameViewport->RemoveViewportWidgetContent(WorldPanel.ToSharedRef());
@@ -115,12 +119,10 @@ void USaytHUDWidget::HandleIndicatorAdded(const FSaytIndicatorEntry& Entry)
 		return;
 	}
 
-	const FSaytHealthDisplayPreset Preset = GetSaytHealthDisplayPreset(ESaytHealthDisplayType::Mob);
-	TSharedRef<SSaytHealthDisplay> Display = SNew(SSaytHealthDisplay)
-		.SegmentCount(1)
-		.BarStyle(Preset.BarStyle)
-		.DesiredBarSize(Preset.BarSize);
+	TSharedRef<SSaytHealthDisplay> Display = AcquireMobDisplay();
 
+	// 재사용 위젯의 잔여 표시도 여기서 전부 새로 세팅된다 —
+	// BindToASC가 구독 등록 + 현재 값 직접 읽기를 함께 하기 때문
 	if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Actor))
 	{
 		Display->BindToASC(ASC);
@@ -139,15 +141,54 @@ void USaytHUDWidget::HandleIndicatorRemoved(const FSaytIndicatorEntry& Entry)
 {
 	if (TSharedPtr<SSaytHealthDisplay>* Found = MobDisplays.Find(Entry.Actor))
 	{
-		if (Found->IsValid())
-		{
-			(*Found)->UnbindFromASC();
-		}
+		ReleaseMobDisplay(*Found);
 		MobDisplays.Remove(Entry.Actor);
 	}
 
 	if (WorldPanel.IsValid())
 	{
 		WorldPanel->RemoveSlotForActor(Entry.Actor);
+	}
+}
+
+TSharedRef<SSaytHealthDisplay> USaytHUDWidget::AcquireMobDisplay()
+{
+	while (MobDisplayPool.Num() > 0)
+	{
+		TSharedPtr<SSaytHealthDisplay> Reused = MobDisplayPool.Pop();
+		if (Reused.IsValid())
+		{
+			UE_LOG(LogSaytUI, Verbose, TEXT("[풀] 재사용 (유휴 %d개 남음)"), MobDisplayPool.Num());
+			return Reused.ToSharedRef();
+		}
+	}
+
+	const FSaytHealthDisplayPreset Preset = GetSaytHealthDisplayPreset(ESaytHealthDisplayType::Mob);
+	UE_LOG(LogSaytUI, Verbose, TEXT("[풀] 신규 생성 (유휴 없음)"));
+
+	return SNew(SSaytHealthDisplay)
+		.SegmentCount(1)
+		.BarStyle(Preset.BarStyle)
+		.DesiredBarSize(Preset.BarSize);
+}
+
+void USaytHUDWidget::ReleaseMobDisplay(const TSharedPtr<SSaytHealthDisplay>& InDisplay)
+{
+	if (!InDisplay.IsValid())
+	{
+		return;
+	}
+
+	// 구독을 반드시 끊는다 — 남겨 두면 재사용 위젯이 죽은 대상의 신호를 계속 받는다
+	InDisplay->UnbindFromASC();
+
+	if (MobDisplayPool.Num() < MaxPooledMobDisplays)
+	{
+		MobDisplayPool.Add(InDisplay);
+		UE_LOG(LogSaytUI, Verbose, TEXT("[풀] 반납 (유휴 %d개)"), MobDisplayPool.Num());
+	}
+	else
+	{
+		UE_LOG(LogSaytUI, Verbose, TEXT("[풀] 상한 초과로 폐기"));
 	}
 }
