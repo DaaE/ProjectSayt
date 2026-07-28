@@ -124,7 +124,7 @@ int32 SSaytWorldPanel::OnPaint(const FPaintArgs& Args, const FGeometry& Allotted
 	// 커스텀 Panel의 표준 그리기 형태: 배치 명단을 만들고 그 명단대로 자식을 그린다
 	FArrangedChildren ArrangedChildren(EVisibility::Visible);
 	ArrangeChildren(AllottedGeometry, ArrangedChildren);
-
+	
 	return PaintArrangedChildren(Args, ArrangedChildren, AllottedGeometry, MyCullingRect,
 		OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
 }
@@ -225,8 +225,11 @@ EActiveTimerReturnType SSaytWorldPanel::UpdateProjections(double InCurrentTime, 
 	}
 
 	// 실제로 달라진 슬롯이 있을 때만 배치 재계산을 요청합니다.
-	// 카메라·몬스터가 모두 정지해 있으면 이 요청이 발생하지 않으므로,
-	// invalidation 캐싱 아래에서 '정지 화면 = Arrange 생략'이라는 진짜 휴면이 성립합니다.
+	// 주의: 이 신고가 실제 비용 절감으로 이어지는지는 별개 문제다.
+	// 실측(2026-07) 결과, PIE에서는 Slate.EnableGlobalInvalidation을 켜도
+	// 뷰포트에 얹힌 이 패널은 매 프레임 Prepass/Arrange/Paint가 모두 돈다.
+	// 신고 자체는 (1) 캐싱이 적용되는 환경에서의 정확성 보장 (2) 비용 0
+	// 이라는 이유로 유지하되, 실효 여부는 Phase 9 프로파일링에서 재측정할 것.
 	if (bAnyChanged)
 	{
 		Invalidate(EInvalidateWidgetReason::Layout);
