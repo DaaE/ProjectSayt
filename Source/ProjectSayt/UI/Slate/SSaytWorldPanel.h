@@ -34,6 +34,7 @@ public:
 		// 갱신 단계가 기록하고, OnArrangeChildren이 읽는 캐시
 		FVector2D CachedPixelPosition = FVector2D::ZeroVector;
 		bool bCachedInFront = false;
+		float CachedScale = 1.f;
 	};
 	
 	SLATE_BEGIN_ARGS(SSaytWorldPanel)
@@ -60,6 +61,9 @@ public:
 	virtual FVector2D ComputeDesiredSize(float) const override;              // Measure 패스 (상향식)
 	virtual void OnArrangeChildren(const FGeometry& AllottedGeometry,
 								   FArrangedChildren& ArrangedChildren) const override; // Arrange 패스 (하향식)
+	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
+						  const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements,
+						  int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
 	virtual FChildren* GetChildren() override;
 	
 private:

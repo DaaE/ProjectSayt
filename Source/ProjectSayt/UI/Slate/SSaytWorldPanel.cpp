@@ -3,10 +3,24 @@
 #include "SSaytWorldPanel.h"
 #include "Engine/GameViewportClient.h"
 #include "Engine/LocalPlayer.h"
+#include "SaytLogChannels.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "Layout/ArrangedChildren.h"
 #include "SceneView.h"
+
+// 거리 기반 축소 튜닝 값 — PIE 중 콘솔에서 바로 조절 가능
+static TAutoConsoleVariable<float> CVarMobBarNearDistance(
+	TEXT("Sayt.MobBar.NearDistance"), 600.f,
+	TEXT("이 거리 이내에서는 바가 원래 크기(배율 1.0)"));
+
+static TAutoConsoleVariable<float> CVarMobBarFarDistance(
+	TEXT("Sayt.MobBar.FarDistance"), 4000.f,
+	TEXT("이 거리 이상에서는 바가 최소 배율"));
+
+static TAutoConsoleVariable<float> CVarMobBarMinScale(
+	TEXT("Sayt.MobBar.MinScale"), 0.45f,
+	TEXT("먼 거리에서의 최소 배율"));
 
 void SSaytWorldPanel::FSlot::Construct(const FChildren& SlotOwner, FSlotArguments&& InArgs)
 {
@@ -93,11 +107,26 @@ void SSaytWorldPanel::OnArrangeChildren(const FGeometry& AllottedGeometry, FArra
 		
 		// 바 가로 중앙 + 기준점 아래 정렬 (머리 위치가 바의 '발밑'이 되도록)
 		const FVector2D ChildSize = Widget->GetDesiredSize();
-		const FVector2D ChildOffset(LocalPos.X - ChildSize.X * 0.5f, LocalPos.Y - ChildSize.Y);
-
-		// 자식 배치 = "이 크기로, 이 변환(평행이동)을 부여한다" — 개편 후 FGeometry의 본래 모델
-		ArrangedChildren.AddWidget(AllottedGeometry.MakeChild(Widget, ChildSize, FSlateLayoutTransform(ChildOffset)));
+		
+		// 정렬 계산은 화면에 실제로 차지할 크기(= 원래 크기 × 배율) 기준이어야 한다
+		const FVector2D ScaledSize = ChildSize * CurSlot.CachedScale;
+		const FVector2D ChildOffset(LocalPos.X - ScaledSize.X * 0.5f, LocalPos.Y - ScaledSize.Y);
+				
+		// 배치 변환에 배율을 함께 실으면 자식 내부 크기는 그대로 두고 최종 표시만 축소된다
+		ArrangedChildren.AddWidget(AllottedGeometry.MakeChild(Widget, ChildSize, FSlateLayoutTransform(CurSlot.CachedScale, ChildOffset)));
 	}
+}
+
+int32 SSaytWorldPanel::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
+	const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements,
+	int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+{
+	// 커스텀 Panel의 표준 그리기 형태: 배치 명단을 만들고 그 명단대로 자식을 그린다
+	FArrangedChildren ArrangedChildren(EVisibility::Visible);
+	ArrangeChildren(AllottedGeometry, ArrangedChildren);
+
+	return PaintArrangedChildren(Args, ArrangedChildren, AllottedGeometry, MyCullingRect,
+		OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
 }
 
 FChildren* SSaytWorldPanel::GetChildren()
@@ -147,6 +176,12 @@ EActiveTimerReturnType SSaytWorldPanel::UpdateProjections(double InCurrentTime, 
 
 	const FMatrix ViewProjectionMatrix = ProjectionData.ComputeViewProjectionMatrix();
 	const FIntRect ViewRect = ProjectionData.GetConstrainedViewRect();
+	const FVector ViewOrigin = ProjectionData.ViewOrigin;
+	
+	// 튜닝 값은 매 프레임 한 번만 읽는다 (슬롯마다 읽을 이유가 없다)
+	const float NearDistance = CVarMobBarNearDistance.GetValueOnGameThread();
+	const float FarDistance = CVarMobBarFarDistance.GetValueOnGameThread();
+	const float MinScale = CVarMobBarMinScale.GetValueOnGameThread();
 
 	bool bAnyChanged = false;
 
@@ -173,10 +208,18 @@ EActiveTimerReturnType SSaytWorldPanel::UpdateProjections(double InCurrentTime, 
 		FVector2D PixelPos = FVector2D::ZeroVector;
 		const bool bInFront = FSceneView::ProjectWorldToScreen(TrackedLocation, ViewRect, ViewProjectionMatrix, PixelPos);
 
-		if (bInFront != CurSlot.bCachedInFront || !PixelPos.Equals(CurSlot.CachedPixelPosition, 0.01f))
+		// 카메라에서 대상까지의 거리 → 배율. 가까우면 1.0, 멀면 하한까지 선형 축소
+		const float Distance = FVector::Dist(ViewOrigin, TrackedLocation);
+		const float Alpha = FMath::GetRangePct(NearDistance, FarDistance, Distance);
+		const float NewScale = FMath::Lerp(1.f, MinScale, FMath::Clamp(Alpha, 0.f, 1.f));
+		
+		if (bInFront != CurSlot.bCachedInFront
+			|| !PixelPos.Equals(CurSlot.CachedPixelPosition, 0.01f)
+			|| !FMath::IsNearlyEqual(NewScale, CurSlot.CachedScale, 0.001f))
 		{
 			CurSlot.bCachedInFront = bInFront;
 			CurSlot.CachedPixelPosition = PixelPos;
+			CurSlot.CachedScale = NewScale;
 			bAnyChanged = true;
 		}
 	}
