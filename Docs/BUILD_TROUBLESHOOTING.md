@@ -138,9 +138,42 @@ UECommon.props(15,3): Error MSB4019 :
 1. Epic Games Launcher → 라이브러리 → UE 5.7 → 확인(Verify) 실행 (미뤄뒀던 것)
 2. Rider → Settings → Unreal Engine → RiderLink → 게임에 RiderLink 설치 (재설치)
 3. 에디터 정상 기동 확인
-- 효과: RiderLink 수리 + 엔진 오염 청소 동시 달성.
-  만성 이슈(빌드 성공 → 에디터 기동 실패 → Binaries 삭제 반복)의 재발 조건 자체가 제거됨
+- 효과: 엔진 자동화 모듈 실종 문제는 해결됨.
+  단, RD.dll의 GetLastError=4551 자체의 원인은 이 시점에 확인되지 않았음 (사건 4에서 규명)
 - 예방: RiderLink 자동 업데이트 옵션 활성화 권장 (설치 위치가 게임이면 엔진은 안 건드림)
+
+---
+
+## 사건 4 — GetLastError=4551 반복: 백신 제외 목록이 도구 업데이트로 무효화됨
+
+### 증상
+- 서로 다른 DLL에서 동일 코드로 로드 실패가 반복
+  - 사건 3: UnrealEditor-RD.dll (RiderLink)
+  - 2026-07-28: UnrealEditor-ProjectSayt.dll (게임 모듈)
+  - 재빌드 직후: UnrealEditor-RiderLogging.dll (RiderLink)
+- 공통 시그니처: 파일이 존재하고 방금 빌드된 새 파일인데 OS가 로드를 거부
+  (파일 부재 시의 126 + File does not exist 조합과 명확히 구분됨)
+
+### 원인 (유력, 보호 기록 미확인)
+- Windows Defender 제외 목록에 Rider 2026.1 경로만 등록된 상태에서
+  Rider가 2026.2로 업데이트됨 → 새 설치 경로가 검사 대상이 됨
+- Rider가 빌드하는 산출물(RiderLink 등)과 그 직후 쓰인 DLL이 간섭을 받음
+
+### 해결
+- Windows 보안 → 바이러스 및 위협 방지 → 제외 항목에
+  C:\Users\...\AppData\Local\JetBrains\Rider2026.2 추가
+- 함께 등록된 경로: C:\Dev\ProjectSayt, C:\Program Files\Epic Games,
+  C:\Program Files\JetBrains\Rider\r2r, .nuget
+- 복구 절차(이번 사례): RiderLink 제거 → Binaries/Intermediate 삭제 →
+  프로젝트 파일 재생성 → RiderLink 재설치 → 재빌드 → 기동 성공
+
+### 교훈
+- 제외 목록은 버전 번호가 박힌 경로를 담으므로 도구 업데이트 시 조용히 무효가 된다.
+  Rider/엔진 업데이트 시 제외 목록 갱신을 함께 수행할 것
+- 재발 시 추가 후보 경로: C:\Users\...\AppData\Local\Temp\UnrealLink
+  (RiderLink 빌드 작업 경로. 단 Temp 전체 제외는 보안상 권장하지 않음)
+- 진단 순서: 재빌드 전에 "빌드 없이 재실행"을 먼저 시도할 것.
+  성공하면 일시적 간섭, 실패하면 산출물 문제로 갈린다
 
 ---
 
