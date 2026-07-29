@@ -140,40 +140,53 @@ UECommon.props(15,3): Error MSB4019 :
 3. 에디터 정상 기동 확인
 - 효과: 엔진 자동화 모듈 실종 문제는 해결됨.
   단, RD.dll의 GetLastError=4551 자체의 원인은 이 시점에 확인되지 않았음 (사건 4에서 규명)
-- 예방: RiderLink 자동 업데이트 옵션 활성화 권장 (설치 위치가 게임이면 엔진은 안 건드림)
+
+  ※ 사건 4 확정 후 재평가: RD.dll 4551의 실제 원인은 Smart App Control이었으며,
+   이 사건에서 수행한 RiderLink 재설치·엔진 Verify는 원인 해결과 무관했다.
+   당시 성공한 것은 재빌드된 DLL이 우연히 차단을 피했기 때문으로 추정된다.
 
 ---
 
-## 사건 4 — GetLastError=4551 반복: 백신 제외 목록이 도구 업데이트로 무효화됨
+## 사건 4 — Smart App Control이 서명 없는 게임 모듈 DLL 로드를 차단
 
 ### 증상
-- 서로 다른 DLL에서 동일 코드로 로드 실패가 반복
-  - 사건 3: UnrealEditor-RD.dll (RiderLink)
-  - 2026-07-28: UnrealEditor-ProjectSayt.dll (게임 모듈)
-  - 재빌드 직후: UnrealEditor-RiderLogging.dll (RiderLink)
+- 서로 다른 DLL에서 GetLastError=4551로 로드 실패가 반복 (때때로 연쇄로 126 동반)
+  - 2026-07-26: UnrealEditor-RD.dll (RiderLink) — 사건 3으로 잘못 분류했던 건
+  - 2026-07-28: UnrealEditor-ProjectSayt.dll (게임 모듈) 2회
+  - 2026-07-29: UnrealEditor-RiderBlueprint.dll (RiderLink)
 - 공통 시그니처: 파일이 존재하고 방금 빌드된 새 파일인데 OS가 로드를 거부
-  (파일 부재 시의 126 + File does not exist 조합과 명확히 구분됨)
+- 간헐적 — 같은 코드를 재빌드하면 통과할 때도 있음 (클라우드 평판 판정 개입)
+- Windows 보안 알림에 "이 앱의 일부가 차단되었습니다 / 앱에서 로드하려고 <DLL명>"
+  ※ 격리가 아니라 로드 거부이므로 보호 기록의 격리 목록에는 나타나지 않음.
+    알림 목록에서만 확인 가능 — 이것 때문에 원인 규명이 크게 지연됨
 
-### 원인 (유력, 보호 기록 미확인)
-- Windows Defender 제외 목록에 Rider 2026.1 경로만 등록된 상태에서
-  Rider가 2026.2로 업데이트됨 → 새 설치 경로가 검사 대상이 됨
-- Rider가 빌드하는 산출물(RiderLink 등)과 그 직후 쓰인 DLL이 간섭을 받음
+### 원인
+- Windows 11 Smart App Control(스마트 앱 제어)이 켜져 있었음
+- 이 기능은 서명이 없거나 유효하지 않은 바이너리를 신뢰 불가로 판정해 차단
+- 로컬 빌드 산출물은 매번 새로 생성되는 서명 없는 DLL이므로 정확히 차단 대상
 
 ### 해결
-- Windows 보안 → 바이러스 및 위협 방지 → 제외 항목에
-  C:\Users\...\AppData\Local\JetBrains\Rider2026.2 추가
-- 함께 등록된 경로: C:\Dev\ProjectSayt, C:\Program Files\Epic Games,
-  C:\Program Files\JetBrains\Rider\r2r, .nuget
-- 복구 절차(이번 사례): RiderLink 제거 → Binaries/Intermediate 삭제 →
-  프로젝트 파일 재생성 → RiderLink 재설치 → 재빌드 → 기동 성공
+- Windows 보안 → 앱 및 브라우저 컨트롤 → 스마트 앱 제어 → 설정 → 끄기
+- ⚠️ 비가역: 한 번 끄면 Windows 재설치 전까지 다시 켤 수 없음
+- Defender 백신 / SmartScreen / 방화벽은 그대로 유지됨
+
+### 왜 다른 해법이 없었나
+- 제외 목록이 존재하지 않음 (켜짐/꺼짐 두 상태뿐)
+- 정식 인증서로 서명해도 평판 판정 때문에 차단되는 사례가 보고됨
+- IDE 무관 — Visual Studio 빌드 차단 사례도 존재. Rider 교체는 해법이 아니었음
+
+### 오진 기록 (같은 실수 반복 방지)
+아래는 모두 무죄였고, 확인에 상당한 시간이 소모됨:
+- RiderLink 플러그인 (제거·재설치 반복)
+- 엔진 설치본 오염 (Launcher Verify 실행)
+- 백신 검사 제외 목록 / Rider 버전 업데이트에 따른 경로 변경
+- 빌드 산출물 손상 (Binaries·Intermediate 삭제 반복)
 
 ### 교훈
-- 제외 목록은 버전 번호가 박힌 경로를 담으므로 도구 업데이트 시 조용히 무효가 된다.
-  Rider/엔진 업데이트 시 제외 목록 갱신을 함께 수행할 것
-- 재발 시 추가 후보 경로: C:\Users\...\AppData\Local\Temp\UnrealLink
-  (RiderLink 빌드 작업 경로. 단 Temp 전체 제외는 보안상 권장하지 않음)
-- 진단 순서: 재빌드 전에 "빌드 없이 재실행"을 먼저 시도할 것.
-  성공하면 일시적 간섭, 실패하면 산출물 문제로 갈린다
+- DLL 로드 실패 시 **Windows 보안 알림 목록을 최우선으로 확인**할 것.
+  보호 기록(격리)만 보고 "차단 항목 없음"으로 판단하면 안 됨
+- 오류 코드가 서로 다른 DLL에서 반복되면 그 DLL들의 공통점이 아니라
+  **그 DLL들을 다루는 외부 주체**를 의심할 것
 
 ---
 
