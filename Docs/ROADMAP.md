@@ -84,7 +84,7 @@ UE 5.7.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 |---|---|---|
 | 0 | Live-tuning 워밍업 — 직접 마우스 입력(FReply), TAttribute Pull | ✅ |
 | 1 | SHealthBar 코어 — GAS Push 델리게이트, TSlateAttribute, 고스트 바(ActiveTimer), 스타일셋 | ✅ |
-| 2 | Boss/Monster HP — 세그먼트 보스 바(구슬 스택 방식 main + 줄 체력 색 스왑 변형), SActorCanvas형 월드 패널 | 대기 |
+| 2 | Boss/Monster HP — 세그먼트 보스 바(구슬 스택 방식 main + 줄 체력 색 스왑 변형), SActorCanvas형 월드 패널 | ✅ (폴리시·측정 이연) |
 | 3 | 버프/디버프 트레이 — STileView, OnPaint 라디얼 쿨다운 (UMG 래핑 필수) | 대기 |
 | 4 | 데미지 폰트 — SWidget 오브젝트 풀 + FCurveSequence (+풀링 `UWorldSubsystem` 리팩터) | 대기 |
 | 5 | 스킬 슬롯 바 — 데이터 기반 슬롯 구성 (UMG 래핑 필수) | 대기 |
@@ -96,19 +96,16 @@ UE 5.7.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 4. 비주얼 폴리시 패스 필수 — 회색 박스 상태로 종료 금지
 5. 측정 증거 — before/after 캡처 또는 stat 수치를 Docs/Media에 보존
 
-## Stage 1 산출물 — SSaytHealthBar
+**Stage 2 이연 항목** (공통 체크리스트 4·5의 의도된 예외 — 사유는 `Docs/DECISIONS.md`)
 
-### 구현 요약
-GAS Attribute에 직결된 커스텀 Slate 체력바(`SLeafWidget`). 텍스처 없이
-draw element만으로 7개 레이어(배경 / 피격 잔상 / 채움 / 음영 그라디언트 /
-하이라이트 / 눈금 / 외곽 프레임)를 구성하며, 스타일(`FSlateWidgetStyle`)과
-런타임 상태를 분리했다.
-
-| | |
+| 항목 | 시점 |
 |---|---|
-| 폴리시 전/후 | `Docs/Media/healthbar_before.png` → `healthbar_after.png` |
-| 피격 잔상 동작 | `Docs/Media/healthbar_ghost.gif` |
-| 유휴 시 재페인트 측정 | `Docs/Media/stat_slate_idle.png` |
+| 몹 바 비주얼 폴리시, 기준점 높이(`HeadMargin`), 거리 수치 3종 | Phase 11 |
+| `UWidgetComponent` 두 모드 실측 비교 캡처 | Phase 11 |
+| 위젯 풀 유무 비용 차이, 거리 컬링 도입 판단 | Phase 9 |
+| 뷰포트 직접 부착 vs `SInvalidationPanel` 래핑 비용 비교 | Phase 9 |
+| 무효화 종류별(Layout/Paint/Volatile) 차이 학습 | Phase 9 |
+| 보스 프레임 알파 0.7 배경 간섭 재평가 | 보스 바 작업 시 |
 
 ### 설계 결정과 trade-off
 
