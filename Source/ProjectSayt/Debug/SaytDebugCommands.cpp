@@ -38,6 +38,9 @@
 #include "UI/SaytHealthDisplayTypes.h"
 #include "UI/Slate/SSaytTuningPanel.h"
 #include "Widgets/Layout/SBox.h"
+#include "GameplayEffect.h"
+#include "AbilitySystem/Effects/SaytGameplayEffectUIData.h"
+
 
 // ═════════════════════════════════════════════════════════════
 // Phase 8 Stage 0 — Slate 라이브 튜닝 데모 패널
@@ -678,6 +681,59 @@ namespace SaytMobHarness
 	static FAutoConsoleCommand RebuildHUDCmd(TEXT("Sayt.HUD.Rebuild"),
 		TEXT("HUD 위젯을 파괴 후 재생성 (리스폰 상황 재현)"),
 		FConsoleCommandDelegate::CreateStatic(&RebuildHUD));
+}
+
+// ═════════════════════════════════════════════════════════════
+// Phase 8 Stage 3 A-2 — 트레이 표시 대상 필터 검증
+// ═════════════════════════════════════════════════════════════
+namespace SaytEffectTrayDebug
+{
+	static void ListDisplayableEffects()
+	{
+		UWorld* World = (GEngine && GEngine->GameViewport) ? GEngine->GameViewport->GetWorld() : nullptr;
+		APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		APawn* Pawn = PC ? PC->GetPawn() : nullptr;
+		UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(Pawn);
+		if (!ASC)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[트레이] 플레이어 ASC를 찾지 못했습니다"));
+			return;
+		}
+
+		// 빈 쿼리 = 모든 활성 효과. 즉발 GE는 애초에 여기 없다.
+		// 이 순회와 필터는 A-6의 표시 모델이 그대로 물려받는다.
+		const TArray<FActiveGameplayEffectHandle> Handles = ASC->GetActiveEffects(FGameplayEffectQuery());
+
+		UE_LOG(LogSaytUI, Log, TEXT("[트레이] 활성 효과 %d개"), Handles.Num());
+
+		for (const FActiveGameplayEffectHandle& Handle : Handles)
+		{
+			const UGameplayEffect* Def = ASC->GetGameplayEffectCDO(Handle);
+			if (!Def)
+			{
+				continue;
+			}
+
+			// 우리 파생 타입으로 직접 질의한다 — 통과 판정과 데이터 획득이 한 번에 끝난다.
+			const USaytGameplayEffectUIData* UIData = Def->FindComponent<USaytGameplayEffectUIData>();
+			if (!UIData)
+			{
+				UE_LOG(LogSaytUI, Log, TEXT("  %s → 제외 (UI Data 없음)"), *Def->GetName());
+				continue;
+			}
+
+			UE_LOG(LogSaytUI, Log, TEXT("  %s → 표시 [%s / %s]"),
+				*Def->GetName(),
+				*UIData->DisplayName.ToString(),
+				UIData->Category == ESaytEffectCategory::Buff ? TEXT("버프") : TEXT("디버프"));
+		}
+	}
+
+	// 출력이 유일한 목적이고 사용자가 명시적으로 호출하는 커맨드이므로 Log 레벨.
+	// (Verbose 기본값 규칙은 코드 흐름에 상주하는 추적 로그를 대상으로 한다)
+	static FAutoConsoleCommand ListCmd(TEXT("Sayt.EffectTray.List"),
+		TEXT("플레이어의 활성 효과를 순회해 트레이 표시 대상 여부를 출력"),
+		FConsoleCommandDelegate::CreateStatic(&ListDisplayableEffects));
 }
 
 #endif // !UE_BUILD_SHIPPING
