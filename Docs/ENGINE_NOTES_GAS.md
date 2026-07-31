@@ -188,6 +188,15 @@ FOnGivenActiveGameplayEffectRemoved& OnAnyGameplayEffectRemovedDelegate();
 1회 순회해 이미 걸려 있는 효과를 반영해야 한다(Stage 1 「초기 1회 Pull + 이후 Push」와 동일,
 Stage 2 몹 패널의 리스폰 따라잡기와 동일한 문제).
 
+**제거 콜백은 되묻지 못한다.** 통지 시점에 그 효과는 컨테이너에서 빠지는 중이라
+핸들로 조회할 수 없다. 그래서 서명이 비대칭이다(추가는 인자 3개, 제거는 구조체 참조
+1개). 필요한 것은 건네받은 구조체 안에서 읽는다 — `EffectRemoved.Spec.Def`.
+이 참조를 보관하면 안 된다.
+
+**Def의 출처는 문맥마다 다르다.** 목록 순회는 `GetGameplayEffectCDO(Handle)`,
+추가 콜백은 `SpecApplied.Def`, 제거 콜백은 `EffectRemoved.Spec.Def`.
+콜백에서 핸들로 되묻지 않는 이유는 통지가 이미 필요한 것을 건네줬기 때문이다.
+
 ## 10. 항목 단위 구독
 
 `AbilitySystemComponent.h` / `GameplayEffectTypes.h`
