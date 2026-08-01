@@ -19,7 +19,8 @@
 
 출처 표기: 표기 없음 = 로컬 5.7 소스 직접 확인. `[문서]` = Epic 공식 5.7 문서.
 `[커뮤니티 5.3]` = tranek/GASDocumentation(Epic이 공식 문서에서 링크하는 레퍼런스, 5.3 기준).
-`[5.7 실측]` = 이전 대화창에서 로컬 소스로 확인했으나 이번 세션에 재확인하지 않음.
+`[5.7 실측]` = 로컬 5.7 소스·PIE로 직접 확인. 표기 없음과 동등한 등급이며 재확인 대상이 아니다.
+대화창이 바뀌는 것은 근거의 등급과 무관하다 — 재확인 대상은 **엔진 버전이 다른 출처**뿐이다.
 
 ---
 
@@ -232,6 +233,20 @@ OnEffectRemoved     (const FGameplayEffectRemovalInfo&)
 Stage 1의 `SSaytHealthBar`는 ASC 하나만 구독하면 됐다는 점과 대비된다. 이것이 파트 A의
 실질 난이도다.
 
+**제거 시점에 이벤트 묶음은 이미 소멸해 있다** `[5.7 PIE 실측]`.
+목록 층 제거 통지를 받은 뒤 `GetActiveEffectEventSet(Handle)`을 부르면 `nullptr`이 온다.
+→ 항목 층 델리게이트를 명시적으로 해제할 필요가 없다. 보관 중인 항목 상태만 버린다.
+단, 구독 해제 커맨드처럼 **효과가 살아 있는 상태에서 푸는 경로**가 따로 있으므로
+묶음 포인터 null 검사는 유지한다.
+
+`FActiveGameplayEffectHandle`은 전용 헤더 `ActiveGameplayEffectHandle.h`에 있고
+`GetOwningAbilitySystemComponent()`를 제공한다 — 콜백이 핸들만으로 ASC를 되찾을 수 있어
+외부 상태를 참조하지 않아도 된다.
+
+`OnEffectRemoved`(항목 층)는 **쓰지 않는다.** 목록 층 제거 통지와 같은 사건이라 두 경로로
+받으면 갱신이 중복되고 정본이 애매해진다. 제거는 목록 층 하나로 받는다.
+`OnInhibitionChanged`는 억제 개념 자체가 Phase 11 소관이다.
+
 ## 11. 스택 수 조회
 
 `AbilitySystemComponent.h`
@@ -297,7 +312,7 @@ int32 GetCurrentStackCount(FGameplayAbilitySpecHandle) const;   // GE가 부여�
 ## 14. 같은 GE가 복수 인스턴스로 공존한다 — 스택과 다른 메커니즘
 
 `StackingType`이 `None`이면 매 적용이 별개 인스턴스가 된다. `showdebug abilitysystem`에서
-`combowindow(1)`, `combowindow(2)`로 관찰됨 `[5.7 실측, PIE 실측]`.
+`combowindow(1)`, `combowindow(2)`로 관찰됨 `[5.7 PIE 실측]`.
 
 → **트레이는 「활성 효과 1개 = 아이콘 1개」가 아니라 「효과 종류로 묶어 아이콘 1개 + 숫자」여야
 한다.** 그리고 그 숫자가 스택 카운터인지 인스턴스 개수인지를 표시 모델이 구분해 들고 있어야
