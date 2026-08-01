@@ -309,6 +309,17 @@ int32 GetCurrentStackCount(FGameplayAbilitySpecHandle) const;   // GE가 부여�
 상한에서 적용이 허용된 경우 이전 값과 새 값이 같은 채로 `OnStackCountChange`가 불린다.
 값을 비교해 무변화를 걸러야 불필요한 무효화가 안 생긴다.
 
+**적용 거부와 오버플로 발동은 별개 판정이다** `[5.7 PIE 실측]`.
+`bDenyOverflowApplication`은 스택이 올라가지 않게 할 뿐, 오버플로 효과는 매 적용
+시도마다 나간다. 차단하지 않으면 오버플로 효과가 인스턴스 단위로 무한 누적된다
+(냉기 12연타에 빙결 7개까지 쌓이는 것을 확인).
+
+**`bClearStackOnOverflow`는 `bDenyOverflowApplication`이 켜져야 편집 가능하다**
+(EditConditionHides). 꺼져 있으면 디테일 패널에 항목 자체가 보이지 않는다.
+
+**통지 순서는 「오버플로 효과 추가 → 원본 스택 제거」다** `[5.7 PIE 실측]`.
+트레이에 두 항목이 동시에 존재하는 중간 상태가 한 프레임 발생한다.
+
 ## 14. 같은 GE가 복수 인스턴스로 공존한다 — 스택과 다른 메커니즘
 
 `StackingType`이 `None`이면 매 적용이 별개 인스턴스가 된다. `showdebug abilitysystem`에서
