@@ -19,7 +19,7 @@
 
 출처 표기: 표기 없음 = 로컬 5.7 소스 직접 확인. `[문서]` = Epic 공식 5.7 문서.
 `[커뮤니티 5.3]` = tranek/GASDocumentation(Epic이 공식 문서에서 링크하는 레퍼런스, 5.3 기준).
-`[이전 세션]` = 이전 대화창에서 로컬 소스로 확인했으나 이번 세션에 재확인하지 않음.
+`[5.7 실측]` = 이전 대화창에서 로컬 소스로 확인했으나 이번 세션에 재확인하지 않음.
 
 ---
 
@@ -177,7 +177,7 @@ FOnGivenActiveGameplayEffectRemoved& OnAnyGameplayEffectRemovedDelegate();
 | autonomous proxy | Full·Mixed 모드에서 리플리케이트된 효과에 대해서만 |
 | simulated proxy | Full 모드에서만 |
 
-**쓰면 안 되는 유사 델리게이트 `[이전 세션]`** — 이름이 한 단어 차이라 잘못 고르기 쉽다.
+**쓰면 안 되는 유사 델리게이트 `[]`** — 이름이 한 단어 차이라 잘못 고르기 쉽다.
 아래 셋은 **서버에서만** 발화하므로 UI 구독에 쓰면 클라이언트에서 조용히 죽는다.
 
 - `OnGameplayEffectAppliedDelegateToSelf` — 즉발 포함
@@ -219,7 +219,7 @@ struct FActiveGameplayEffectEvents          // USTRUCT 아닌 일반 구조체
 **묶음 포인터를 한 번 받아 넷에 바인드하는 쪽을 쓴다** — 호출이 하나로 끝나고 해제 지점도
 한 곳이 된다.
 
-델리게이트 시그니처 `[이전 세션]`:
+델리게이트 시그니처 `[5.7 실측]`:
 
 ```
 OnStackChanged      (Handle, int32 NewStackCount, int32 PreviousStackCount)
@@ -297,7 +297,7 @@ int32 GetCurrentStackCount(FGameplayAbilitySpecHandle) const;   // GE가 부여�
 ## 14. 같은 GE가 복수 인스턴스로 공존한다 — 스택과 다른 메커니즘
 
 `StackingType`이 `None`이면 매 적용이 별개 인스턴스가 된다. `showdebug abilitysystem`에서
-`combowindow(1)`, `combowindow(2)`로 관찰됨 `[이전 세션, PIE 실측]`.
+`combowindow(1)`, `combowindow(2)`로 관찰됨 `[5.7 실측, PIE 실측]`.
 
 → **트레이는 「활성 효과 1개 = 아이콘 1개」가 아니라 「효과 종류로 묶어 아이콘 1개 + 숫자」여야
 한다.** 그리고 그 숫자가 스택 카운터인지 인스턴스 개수인지를 표시 모델이 구분해 들고 있어야
@@ -313,6 +313,22 @@ Phase 6의 Gameplay Message Subsystem은 `FSaytDamageMessage`용이고 효과 �
 구독자가 그 전의 것을 알아야 하므로 방송으로는 성립하지 않는다.
 
 ---
+
+## 5.7 실측 — GE 스태킹 프로퍼티 (한글화 에디터 디테일 패널)
+
+| 한글 UI | 이번에 쓴 값 |
+|---|---|
+| 경과시간 정책 | Has Duration |
+| 경과시간 규모 → 스케일 가능 플로트 크기 | 3.0 |
+| 스태킹 타입 | **Stack Per Target** |
+| 스택 제한 수 | 4 |
+| 스택 경과시간 새로고침 정책 | Refresh on Successful Application |
+| 스택 기간 리셋 정책 | Reset on Successful Application |
+| 스택 만료 정책 | Clear Entire Stack |
+| 오버플로 → 오버플로 이펙트 / 오버플로 적용 거부 | A-5에서 사용 |
+
+주의: 「스태킹 타입」 값은 구버전 문헌의 `AggregateByTarget`이 아니라 `Stack Per Target`으로
+표시된다. 구버전 이름을 그대로 안내하면 화면에서 찾을 수 없다.
 
 ## 추적하지 않는 것
 

@@ -40,6 +40,8 @@
 #include "Widgets/Layout/SBox.h"
 #include "GameplayEffect.h"
 #include "AbilitySystem/Effects/SaytGameplayEffectUIData.h"
+#include "ActiveGameplayEffectHandle.h"
+#include "UObject/UObjectGlobals.h"
 
 
 // ═════════════════════════════════════════════════════════════
@@ -716,6 +718,108 @@ namespace SaytEffectTrayDebug
 			UIData.Category == ESaytEffectCategory::Buff ? TEXT("버프") : TEXT("디버프"));
 	}
 	
+	/** 항목 하나당 델리게이트 핸들 둘. 걸 때와 풀 때가 대칭이어야 한다. */
+	struct FWatchedEffect
+	{
+		FDelegateHandle StackChangedHandle;
+		FDelegateHandle TimeChangedHandle;
+	};
+
+	static TMap<FActiveGameplayEffectHandle, FWatchedEffect> WatchedEffects;
+
+	/** 핸들만으로 소유 ASC를 되찾을 수 있으므로 콜백이 외부 상태를 참조하지 않는다. */
+	static FString DescribeHandle(FActiveGameplayEffectHandle Handle)
+	{
+		UAbilitySystemComponent* ASC = Handle.GetOwningAbilitySystemComponent();
+		const UGameplayEffect* Def = ASC ? ASC->GetGameplayEffectCDO(Handle) : nullptr;
+		return Def ? Def->GetName() : FString(TEXT("알 수 없음"));
+	}
+
+	static void OnStackChanged(FActiveGameplayEffectHandle Handle, int32 NewCount, int32 PrevCount)
+	{
+		// 상한에 도달한 뒤에도 적용이 허용되면 이전 값과 새 값이 같은 채로 불린다.
+		// 걸러내지 않으면 가득 찬 상태에서 맞을 때마다 트레이가 헛돈다.
+		if (NewCount == PrevCount)
+		{
+			UE_LOG(LogSaytUI, Log, TEXT("[트레이]     %s 스택 무변화 %d (상한 도달 후 재적용)"),
+				*DescribeHandle(Handle), NewCount);
+			return;
+		}
+
+		UE_LOG(LogSaytUI, Log, TEXT("[트레이]     %s 스택 %d → %d"),
+			*DescribeHandle(Handle), PrevCount, NewCount);
+	}
+
+	static void OnTimeChanged(FActiveGameplayEffectHandle Handle, float NewStartTime, float NewDuration)
+	{
+		// 「시간이 흐른다」가 아니라 「지속시간이 새로 설정됐다」는 사건이다.
+		// 매 프레임 오지 않는다 — 라디얼 와이프는 파트 C에서 ActiveTimer + 조회로 그린다.
+		UE_LOG(LogSaytUI, Log, TEXT("[트레이]     %s 시간 갱신 — 지속 %.2f초 (시작 %.2f)"),
+			*DescribeHandle(Handle), NewDuration, NewStartTime);
+	}
+
+	static void SubscribeToEffect(UAbilitySystemComponent* ASC, FActiveGameplayEffectHandle Handle)
+	{
+		// 초기 따라잡기와 추가 통지가 같은 항목에서 겹칠 수 있다.
+		if (WatchedEffects.Contains(Handle))
+		{
+			return;
+		}
+
+		// 묶음을 한 번 받아 둘에 바인드한다. 개별 접근자를 쓰면 해제 지점도 그만큼 늘어난다.
+		FActiveGameplayEffectEvents* Events = ASC->GetActiveEffectEventSet(Handle);
+		if (!Events)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[트레이]   이벤트 묶음 없음 — 항목 구독 실패"));
+			return;
+		}
+
+		FWatchedEffect& Watched = WatchedEffects.Add(Handle);
+		Watched.StackChangedHandle = Events->OnStackChanged.AddStatic(&OnStackChanged);
+		Watched.TimeChangedHandle = Events->OnTimeChanged.AddStatic(&OnTimeChanged);
+
+		UE_LOG(LogSaytUI, Log, TEXT("[트레이]   항목 구독 (총 %d개)"), WatchedEffects.Num());
+	}
+
+	static void UnsubscribeFromEffect(FActiveGameplayEffectHandle Handle)
+	{
+		const FWatchedEffect* Watched = WatchedEffects.Find(Handle);
+		if (!Watched)
+		{
+			return;
+		}
+
+		// 제거 통지 시점에 이벤트 묶음이 아직 살아 있는지가 노트에 없는 사실이다.
+		// 어느 쪽이든 안전하게 처리하고, 실제로 어느 쪽인지는 이 로그로 확인한다.
+		UAbilitySystemComponent* ASC = Handle.GetOwningAbilitySystemComponent();
+		FActiveGameplayEffectEvents* Events = ASC ? ASC->GetActiveEffectEventSet(Handle) : nullptr;
+
+		if (Events)
+		{
+			Events->OnStackChanged.Remove(Watched->StackChangedHandle);
+			Events->OnTimeChanged.Remove(Watched->TimeChangedHandle);
+			UE_LOG(LogSaytUI, Log, TEXT("[트레이]   항목 해제 — 묶음 살아 있음"));
+		}
+		else
+		{
+			UE_LOG(LogSaytUI, Log, TEXT("[트레이]   항목 해제 생략 — 묶음 이미 소멸"));
+		}
+
+		WatchedEffects.Remove(Handle);
+	}
+
+	/** 구독 직후 따라잡기. 목록 층과 항목 층 모두 이 시점에 한 번 맞춰야 한다. */
+	static void SubscribeToExistingEffects(UAbilitySystemComponent* ASC)
+	{
+		for (const FActiveGameplayEffectHandle& Handle : ASC->GetActiveEffects(FGameplayEffectQuery()))
+		{
+			if (FindTrayUIData(ASC->GetGameplayEffectCDO(Handle)))
+			{
+				SubscribeToEffect(ASC, Handle);
+			}
+		}
+	}
+	
 	static void ListDisplayableEffects()
 	{
 		UAbilitySystemComponent* ASC = FindPlayerASC();
@@ -776,6 +880,9 @@ namespace SaytEffectTrayDebug
 
 		UE_LOG(LogSaytUI, Log, TEXT("[트레이] + %s [%s]"),
 			*Def->GetName(), *DescribeTrayEntry(*UIData));
+		
+		// 목록 층 통지가 항목 층 구독의 트리거다. 표시 대상만 건다.
+		SubscribeToEffect(Target, ActiveHandle);
 	}
 
 	static void OnEffectRemoved(const FActiveGameplayEffect& EffectRemoved)
@@ -794,10 +901,21 @@ namespace SaytEffectTrayDebug
 
 		UE_LOG(LogSaytUI, Log, TEXT("[트레이] - %s [%s]"),
 			*Def->GetName(), *DescribeTrayEntry(*UIData));
+		
+		UnsubscribeFromEffect(EffectRemoved.Handle);
 	}
 
 	static void StopWatching()
 	{
+		// UnsubscribeFromEffect가 맵을 수정하므로 키를 먼저 뜬 뒤 순회한다.
+		TArray<FActiveGameplayEffectHandle> Handles;
+		WatchedEffects.GetKeys(Handles);
+		for (const FActiveGameplayEffectHandle& Handle : Handles)
+		{
+			UnsubscribeFromEffect(Handle);
+		}
+		WatchedEffects.Empty();
+		
 		// ASC가 이미 사라졌다면 델리게이트 목록도 함께 사라졌으므로 해제할 대상이 없다.
 		if (UAbilitySystemComponent* ASC = WatchedASC.Get())
 		{
@@ -831,6 +949,66 @@ namespace SaytEffectTrayDebug
 		// 반대로 하면 그 틈에 추가된 효과가 통지도 목록도 없이 영구 누락된다.
 		UE_LOG(LogSaytUI, Log, TEXT("[트레이] 구독 시작 — 현재 목록 따라잡기"));
 		ListDisplayableEffects();
+		SubscribeToExistingEffects(ASC);
+	}
+	
+	/**
+	 * 콘솔에서 임의 GE를 플레이어 자신에게 적용한다.
+	 *   Sayt.Effect.Apply GE_Debuff_Chill        (Effects 폴더 기준 짧은 이름)
+	 *   Sayt.Effect.Apply /Game/경로/GE_X 2      (전체 경로 + 레벨)
+	 */
+	static void ApplyEffectByName(const TArray<FString>& Args)
+	{
+		if (Args.Num() < 1)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[적용] 사용법: Sayt.Effect.Apply <GE 이름 또는 경로> [레벨]"));
+			return;
+		}
+
+		UAbilitySystemComponent* ASC = FindPlayerASC();
+		if (!ASC)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[적용] 플레이어 ASC를 찾지 못했습니다"));
+			return;
+		}
+
+		// 짧은 이름이면 Effects 폴더를 붙인다. 반복 입력이 많은 커맨드라 타이핑을 줄인다.
+		FString Path = Args[0];
+		if (!Path.StartsWith(TEXT("/")))
+		{
+			Path = TEXT("/Game/AbilitySystem/Effects/") + Path;
+		}
+
+		// 블루프린트가 생성한 클래스는 애셋 이름 뒤에 _C가 붙는다.
+		if (!Path.EndsWith(TEXT("_C")))
+		{
+			FString AssetName;
+			Path.Split(TEXT("/"), nullptr, &AssetName, ESearchCase::CaseSensitive, ESearchDir::FromEnd);
+			Path = FString::Printf(TEXT("%s.%s_C"), *Path, *AssetName);
+		}
+
+		UClass* EffectClass = LoadClass<UGameplayEffect>(nullptr, *Path);
+		if (!EffectClass)
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[적용] GE를 찾지 못했습니다: %s"), *Path);
+			return;
+		}
+
+		const float Level = (Args.Num() >= 2) ? FCString::Atof(*Args[1]) : 1.0f;
+
+		FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+		Context.AddSourceObject(ASC->GetOwner());
+
+		const FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(EffectClass, Level, Context);
+		if (!Spec.IsValid())
+		{
+			UE_LOG(LogSaytUI, Warning, TEXT("[적용] 스펙 생성 실패: %s"), *EffectClass->GetName());
+			return;
+		}
+
+		// 성공 로그를 여기서 찍지 않는다 — 찍는 것은 구독의 일이고,
+		// 안 찍히는 것 자체가 관찰 대상이다.
+		ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 	}
 
 	// 출력이 유일한 목적이고 사용자가 명시적으로 호출하는 커맨드이므로 Log 레벨.
@@ -846,6 +1024,10 @@ namespace SaytEffectTrayDebug
 	static FAutoConsoleCommand UnwatchCmd(TEXT("Sayt.EffectTray.Unwatch"),
 		TEXT("구독 해제 (대칭 해제 경로 검증)"),
 		FConsoleCommandDelegate::CreateStatic(&StopWatching));
+	
+	static FAutoConsoleCommand ApplyCmd(TEXT("Sayt.Effect.Apply"),
+		TEXT("플레이어에게 GE를 적용. 사용법: Sayt.Effect.Apply <GE 이름 또는 경로> [레벨]"),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&ApplyEffectByName));
 	
 }
 
