@@ -44,10 +44,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "MassEntity",
-			"Enabled": true
-		},
-		{
 			"Name": "GameplayMessageRouter",
 			"Enabled": true
 		},
