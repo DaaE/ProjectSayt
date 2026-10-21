@@ -34,12 +34,26 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 | 항목 | 결정 | 근거·비고 |
 |---|---|---|
 | Stage 3 파트 B, Stage 5 | Slate 직접 제작(STileView 등)에서 **UMG+C++ ViewModel(MVVM) 경로**로 변경 | Slate 심화의 원래 동기는 스마일게이트 클라이언트 공고의 Slate 우대사항. Stage 1~2(Leaf 체력바, Panel 월드 패널, 위젯 풀)로 Slate 증명은 확보. 이후 UI는 실무 표준 경로(UMG+MVVM)를 증명. 쿨다운 라디얼(`OnPaint`)을 UMG로 감싸는 소형 Slate 위젯으로 남길지는 파트 B 설계 시 결정 |
-| Stage 4 | 착수 전 **대안 조사 단원** 선행 | 타격 이펙트(GameplayCue 재활용·Niagara·현행 GMS+자체 풀), 데미지 숫자(Niagara·UMG 풀·Slate 풀, Lyra 구현 확인)를 리플리케이션 관점까지 비교. 기준은 CONVENTIONS 기술 선택 5축(실무성·범용성·공식 권장·최신성·포폴 적합성) |
+| Stage 4 | **B안 확정**: 타격 이펙트는 GameplayCue Burst 큐로 이전, 데미지 숫자는 UMG 위젯 풀 | 자체 풀링 `UWorldSubsystem` 리팩터 계획은 폐기(엔진의 큐 재활용·사전 할당과 중복). 데미지 숫자는 Lyra처럼 추상 컴포넌트(Strategy 패턴) 아래 구현체로 만들고 UMG 풀(`FUserWidgetPool`)로 구현. Lyra의 Niagara 구현은 Phase 9에서 시간이 되면 같은 인터페이스에 붙여 실측 비교(선택). 근거: Phase 8 UI 주제와 일치, `FText` 서식과 큰 수 표기 유리, Phase 9 위젯 풀 측정 계획과 연결 |
 | Phase 10 | **위치 유지 + 리플리케이션 대비 규칙을 지금 적용(C안)** | 규칙은 `CONVENTIONS.md` 리플리케이션 대비 규칙 절. Stage 4 조사 결과를 보고 앞당김 여부(B안)를 재판단. 견적(2주)은 재산정 대상 |
 | 수직 슬라이스 | **도입(애자일 방식)** — 얇은 전투 루프를 먼저 만들고 반복 개선 | 범위 고정: 추격하는 적 1종, 피격 반응·사망 처리, 플레이어 사망·재시작. Phase 11(StateTree, 보스 페이즈)은 이 슬라이스를 기반으로 확장. 편성 시점은 Stage 3 종료 시 확정 |
 | 자동화 테스트 | 기존 콘텐츠(인벤토리)는 **제외**. 신규 콘텐츠 설계 시 테스트 가능성 검토 | 인벤토리는 변경 가능성이 높고 리소스도 부족. 후보는 `SAYT_BACKLOG.md` 인박스 참조 |
 | Phase 0~7 소급 기록 | 변경 없음 (`DECISIONS.md` 기록 시점 규칙 유지) | 필요해지면 별도 결정 |
-| 외부 조사 | 진행 중 — 공개 샘플·포럼 사례, Paragon 대체, AI 생성 에셋 | 결과는 확정 후 이 절에 추가 |
+| 외부 조사 | 완료(2026-10-21) — 공개 샘플·포럼 사례, Paragon 대체, AI 생성 에셋 | 결과는 아래 보류 후보로 기록. 각 후보는 해당 작업 직전에 재검토 |
+
+### 보류 후보 (작업 시점에 재검토)
+
+외부 조사(2026-10-21)에서 나온 반영 후보다. **지금은 확정하지 않는다.** 각 후보는 재검토 시점
+직전에 Claude가 먼저 언급하고, 그때 반영 여부를 다시 정한다.
+
+| # | 후보 | 재검토 시점 | 내용 |
+|---|---|---|---|
+| 1 | MVVM Beta 위험 기록 | Stage 3 파트 B 착수 전 | UMG Viewmodel은 5.8 문서에 Beta·출하 시 주의로 표시됨. 전환은 유지하되 위험과 완화책(Entry 구조체를 안정된 계약으로 두고 ViewModel은 얇게 유지)을 결정 기록에 남길지 |
+| 2 | Stage 4 자료 확보 입력 | Stage 4 착수 전 | Lyra 5.8 확인 결과: 데미지 숫자는 `GCNL_Character_DamageTaken` 큐에서 컨트롤러 컴포넌트의 `AddNumberPop`을 호출. 엔진 GameplayCue 액터는 재활용·사전 할당 지원(`Recycle`, `NumPreallocatedInstances`). 상세는 문서에 따로 기록하지 않음 |
+| 3 | 로코모션 항목 교체 | 수직 슬라이스 설계 시 + 프레젠테이션 코어 3번 착수 전 | "AnimBP 상태 머신"을 "모션 매칭 평가(Game Animation Sample 참조, CMC 유지)"로 바꿀지. Mover는 5.8 문서에 Experimental이라 채택하지 않는 쪽 |
+| 4 | 수직 슬라이스의 AI 에셋 시험 | 수직 슬라이스 착수 전(적 캐릭터 선정 시) | 적 1종을 AI로 생성해 리깅·리타게팅을 1~2일 시험, 실패 시 Paragon 몹. README에 AI 생성 표기 |
+| 5 | 콘텐츠 방침 | 수직 슬라이스 착수 전, 스킬킷 구간 착수 전 | Paragon 유지, 시스템과 콘텐츠 분리로 교체 비용 낮게 유지, 환경은 PCG와 기존 환경 에셋, AI 월드 생성 제외 |
+| 6 | 견적 재산정 | Stage 3 종료 시 | 수직 슬라이스와 조사 단원을 반영해 일정 재보정(기존 규칙: Phase 종료마다 갱신) |
 
 ## 로드맵 재편 세션 결과 (2026-07-18 확정)
 
@@ -50,7 +64,7 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 | 시스템 | 판정 | 비고 |
 |---|---|---|
 | 캐릭터/GAS 코어 | 유지 | 합성 AttributeSet, 멱등 초기화, 단일 인스턴스 콤보, 표준 ExecCalc 패턴. Replicated props/OnRep 기반 기설치 |
-| 이펙트 풀링 | 리팩터(중) | 레벨 배치 액터 → `UWorldSubsystem`화. 실행 시점: **Stage 4**(풀링 재방문 = 재학습 트리거) |
+| 이펙트 풀링 | 리팩터(중) | 레벨 배치 액터 → `UWorldSubsystem`화. 실행 시점: **Stage 4**(풀링 재방문 = 재학습 트리거). **2026-10-21 변경: GameplayCue Burst 큐 이전으로 대체** (위 조정 결정 참조) |
 | GMS 연동 | 유지 | 리스너의 풀 수동 배선만 풀링 리팩터에 편승 정리 |
 | 데이터 계층 | 유지 | 중앙화 FName 조회 유지(Phase 11 재평가). SaveGame은 소비자 생길 때 확장 |
 | 인벤토리 | 유지 | Model/View 분리·footprint 판정 견고 |
@@ -103,7 +117,7 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 | 1 | SHealthBar 코어 — GAS Push 델리게이트, TSlateAttribute, 고스트 바(ActiveTimer), 스타일셋 | ✅ |
 | 2 | Boss/Monster HP — 세그먼트 보스 바(구슬 스택 방식 main + 줄 체력 색 스왑 변형), SActorCanvas형 월드 패널 | ✅ (폴리시·측정 이연) |
 | 3 | 버프/디버프 트레이 — 파트 A(표시 모델 컴포넌트) 완료. 파트 B는 UMG+MVVM 경로로 변경(2026-10-21, 아래 조정 결정 참조) | 🔧 |
-| 4 | 데미지 폰트 + 풀링 리팩터 — **착수 전 대안 조사 단원 선행**(GameplayCue·Niagara·UMG 풀 비교). 조사 결과로 방식 확정 | 대기 |
+| 4 | 데미지 숫자 + 타격 이펙트 이전 — 타격 이펙트는 GameplayCue Burst 큐, 데미지 숫자는 UMG 위젯 풀(B안 확정, 2026-10-21). 착수 전 자료 확보(큐 타입·`FUserWidgetPool` API 전체) | 대기 |
 | 5 | 스킬 슬롯 바 — 데이터 기반 슬롯 구성, UMG+MVVM 경로(2026-10-21 변경) | 대기 |
 
 **전 Stage 공통 체크리스트**
