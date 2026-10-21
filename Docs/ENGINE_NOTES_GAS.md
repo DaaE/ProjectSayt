@@ -247,7 +247,7 @@ Stage 1의 `SSaytHealthBar`는 ASC 하나만 구독하면 됐다는 점과 대�
 받으면 갱신이 중복되고 정본이 애매해진다. 제거는 목록 층 하나로 받는다.
 `OnInhibitionChanged`는 억제 개념 자체가 Phase 11 소관이다.
 
-## 11. 스택 수 조회
+## 11. 스택 수 조회 / 표시 개수 집계
 
 `AbilitySystemComponent.h`
 
@@ -258,6 +258,27 @@ int32 GetCurrentStackCount(FGameplayAbilitySpecHandle) const;   // GE가 부여�
 
 `[커뮤니티 5.3]` 스택 수는 GameplayEffectSpec에 있고 상한은 GameplayEffect에 있다.
 스택은 **지속형과 무한 효과에서만** 동작한다.
+
+**개수 집계는 `GetGameplayEffectCount`에 위임한다** `[5.7 헤더 계약 + PIE 실측]`.
+
+```cpp
+int32 GetGameplayEffectCount(TSubclassOf<UGameplayEffect> SourceGameplayEffect,
+    UAbilitySystemComponent* OptionalInstigatorFilterComponent,
+    bool bEnforceOnGoingCheck = true) const;
+```
+
+이 함수는 **비스택형이면 활성 인스턴스 개수의 합, 스택형이면 유효 스택 수의 합**을 하나의
+정수로 돌려준다. 그래서 화면에 찍을 숫자(냉기 스택 4, 공격력 증가 인스턴스 2)를 표시 모델이
+스택/인스턴스로 분기해 직접 세지 않아도 된다 — GE 클래스 하나로 질의하면 GAS가 두 경우를
+합산해 준다.
+
+- `OptionalInstigatorFilterComponent`에 `nullptr`을 주면 **모든 소스를 집계**한다
+  `[5.7 PIE 실측]` — 냉기를 4회 쌓았을 때 반환값 4를 확인.
+- `bEnforceOnGoingCheck`는 억제(inhibited) 효과 처리와 얽힌 것으로 추정되나 미확인. 억제는
+  Phase 11 소관이고 현재 억제 효과가 없어 기본값 `true`로 둔다.
+
+→ `GetCurrentStackCount`는 핸들 하나의 스택 수만 주므로 비스택형 복수 인스턴스를 셀 수 없다.
+트레이 개수 산출에는 `GetGameplayEffectCount`가 맞다.
 
 ## 12. 스택 정책 5종
 
@@ -326,8 +347,13 @@ int32 GetCurrentStackCount(FGameplayAbilitySpecHandle) const;   // GE가 부여�
 `combowindow(1)`, `combowindow(2)`로 관찰됨 `[5.7 PIE 실측]`.
 
 → **트레이는 「활성 효과 1개 = 아이콘 1개」가 아니라 「효과 종류로 묶어 아이콘 1개 + 숫자」여야
-한다.** 그리고 그 숫자가 스택 카운터인지 인스턴스 개수인지를 표시 모델이 구분해 들고 있어야
-한다. 화면상 구분이 안 되므로 코드에서 섞이면 발견이 늦다.
+한다.**
+
+그 숫자가 스택 카운터(냉기)인지 인스턴스 개수(공격력 증가)인지는 **표시 모델이 구분해 들
+필요가 없다** `[5.7 PIE 실측, A-6]`. `GetGameplayEffectCount`(11절)가 두 경우를 하나로
+합산해 주므로, 재구축 시 GE 클래스별로 그 함수를 한 번 부르면 최종 숫자가 나온다. 표시
+모델은 스택이냐 인스턴스냐를 알지 못한 채 숫자 하나만 들면 된다 — 두 메커니즘이 코드에서
+섞일 여지 자체가 사라진다.
 
 ## 15. GMS는 이 용도에 쓰지 않는다
 
