@@ -231,3 +231,68 @@ UECommon.props(15,3): Error MSB4019 :
   엔진의 `EpicGames.*.csproj`가 원래 참조하는 NuGet 종속성이며, UE C++ 빌드와 무관하다.
 - **`dotnet --list-sdks` 실행은 PowerShell에서** 할 것.
 - **`Test-Path "C:\Program Files\dotnet\dotnet.exe"`** 로 시스템 dotnet 설치 여부를 빠르게 확인 가능.
+
+---
+
+## 5.8 / Visual Studio 2026 전환 기록 (2026-10-21)
+
+엔진 5.7.4 → 5.8.4(바이너리 빌드 `C:\Program Files\Epic Games\UE_5.8`), IDE Rider → Visual Studio 2026.
+5.7.4는 롤백용으로 병행 설치를 유지한다. 작업 브랜치는 `ue58-migration`.
+
+### 선택된 툴체인 (빌드 로그 `Toolchain Information`)
+
+- Visual Studio 18 Community, MSVC 14.50.35739 로그 표기(경로는 `...\MSVC\14.50.35717`)
+- Windows SDK 10.0.22621.0
+- 첫 터미널 빌드 305초(121개 작업, RiderLink 포함), RiderLink 삭제 후 VS 다시 빌드 79초(22개 작업)
+- 경고·에러 0건. DLL 로드 실패 4551은 발생하지 않았다.
+
+### 사건 5 — Unable to find plugin 'MassEntity'
+
+- 증상: UBT가 프로젝트 파일 단계에서 `Unable to find plugin 'MassEntity' (referenced via
+  ProjectSayt.uproject)`로 실패. `.uproject`를 열면 에디터에서도 Missing Plugin 창이 뜬다.
+- 원인: 5.8의 엔진 `Plugins` 폴더에 `MassEntity`가 없다. 에디터 로그에는
+  `Engine/Binaries/Win64/UnrealEditor-MassEntity.dll` 로드가 찍혀, 플러그인이 아니라 엔진 모듈로
+  옮겨진 것으로 보인다. 5.8 릴리스 노트는 MassCore 모듈 분리를 언급하지만 플러그인 이름 변경을
+  직접 적은 문장은 찾지 못했다. 프로젝트 코드는 Mass를 쓰지 않는다.
+- 조치: `.uproject`에서 `MassEntity` 항목 제거.
+- 교훈: 엔진 전환 직후 첫 빌드가 플러그인 해석에서 막히면 새 엔진 `Plugins` 폴더에 그 이름이
+  있는지부터 본다.
+
+### 사건 6 — r.Mobile.VirtualTextures deprecated ensure
+
+- 증상: 에디터 기동 시 `Ensure condition failed ... r.Mobile.VirtualTextures is deprecated, use
+  r.VirtualTextures in platform specific engine .ini files instead`(Error 레벨, 콜스택 포함).
+- 원인: `Config/DefaultEngine.ini`의 `[/Script/Engine.RendererSettings]`에 있던 해당 줄.
+- 조치: 줄 삭제(같은 섹션에 `r.VirtualTextures=True`가 이미 있다). 재기동 후 ensure 0건.
+
+### 사건 7 — `.vsconfig` 덮어쓰기와 `.slnx`
+
+- 프로젝트 파일 생성이 `.vsconfig`를 다시 쓴다. 수정 시각이 솔루션 생성 직후였고 저장소 첫 커밋의
+  `.vsconfig`도 같은 형태다. 생성 주체가 UBT라는 것은 정황 추정이며 공식 문서로는 확인하지 못했다.
+  → 설치기 내보내기로 손질하지 않고 생성본을 그대로 커밋한다.
+- MSVC 14.38은 설치기가 지원 중단으로 표시해 설치하지 않았다. 5.8 권장 툴셋은 14.44(VS 2022) 또는
+  14.50(VS 2026)이다.
+- 5.8은 `.sln`과 함께 `.slnx`를 생성한다. `.gitignore`에 `*.slnx`를 추가했다(Epic도 5.8.1에서 `.p4ignore`에
+  추가했다).
+- VS의 「Unreal Engine 통합 구성」 창(Visual Studio Integration Tool)은 빌드와 무관해 설치하지 않았다.
+  이 도구는 UE 테스트 실행과 디버거의 Blueprint 핀 값 표시에 쓰이며, 프로젝트/엔진 설치의 차이는
+  확인하지 못했다.
+- 빌드 대상은 솔루션 전체가 아니라 `ProjectSayt` 프로젝트 하나다(사건 3 참고).
+
+### 사건 8 — GAS 오버플로 엔진 버그
+
+원인은 IDE가 아니라 5.8 엔진이다. 스택형 GE의 `OverflowEffects`가 첫 적용에서 발동한다. 상세와
+Epic 상태, 대응(C안)은 `ENGINE_NOTES_GAS.md` 16절.
+
+### 알려진 위험 — MSVC 14.51의 `hash_map`
+
+MSVC 14.51은 `hash_map`을 제거해 5.8의 `nvtess.h`가 컴파일에 실패한다
+(`fatal error C1083: Cannot open include file: 'hash_map'`). Epic 직원이 메인라인은 수정(CL54453441)했고
+5.8 브랜치는 핫픽스 규칙상 반영하지 못한다고 답했다(2026-07-13). 권장 툴셋은 14.44 또는 14.50이다.
+이번에는 14.50이 선택돼 발생하지 않았고 5.8.4 공지에도 이 항목이 없다. VS 업데이트 뒤에는 빌드
+로그 첫머리의 툴체인 줄을 확인한다. https://forums.unrealengine.com/t/msvc-removes-hash-map-in-14-51/2743134
+
+### 이식성 부채 (그대로)
+
+이번 빌드도 `MSBuildEnableWorkloadResolver=false`가 설정된 환경에서 통과했다. 이 설정에 대한 의존 여부는
+재검증하지 않았다. 위 「최종 해결 조합」의 Rider MSBuild 지정은 VS 2026 전환 후 해당하지 않는다.

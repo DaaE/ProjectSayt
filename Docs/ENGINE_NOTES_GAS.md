@@ -13,13 +13,17 @@
 > 지정된 예외이자 유일한 수용처다** — 여기 적힌 것은 전부 로컬 엔진 소스나 공식 문서로
 > 확인된 것이고, 다른 문서와 코드 주석에는 계속 남기지 않는다.
 
-**기준 버전: UE 5.7** (로컬 `C:\Program Files\Epic Games\UE_5.7\Engine`)
+**기준 버전: UE 5.8.4** (로컬 `C:\Program Files\Epic Games\UE_5.8\Engine`)
+2026-10-21에 5.7.4에서 5.8.4로 전환했다. **전환 전에 작성된 항목은 5.7 기준이고, 5.8 재확인을 마친
+항목에만 「5.8 재확인(날짜)」를 붙인다.** 라벨이 없는 기존 항목은 5.8에서 달라졌을 수 있다.
 엔진 업그레이드 시 이 파일 전체를 재검증 대상으로 취급한다. 근거는 파일명까지만 적는다 —
 행 번호는 버전이 바뀌면 어긋나므로 적지 않는다.
 
-출처 표기: 표기 없음 = 로컬 5.7 소스 직접 확인. `[문서]` = Epic 공식 5.7 문서.
+출처 표기: 표기 없음 = 로컬 엔진 소스 직접 확인(전환 전 작성분은 5.7 소스). `[문서]` = Epic 공식 문서
+(전환 전 작성분은 5.7 문서).
 `[커뮤니티 5.3]` = tranek/GASDocumentation(Epic이 공식 문서에서 링크하는 레퍼런스, 5.3 기준).
-`[5.7 실측]` = 로컬 5.7 소스·PIE로 직접 확인. 표기 없음과 동등한 등급이며 재확인 대상이 아니다.
+`[5.7 실측]` = 로컬 5.7 소스·PIE로 직접 확인. **5.8 재확인 전까지는 5.7 기준 등급이다.**
+`[5.8 실측]` = 로컬 5.8 소스·PIE로 직접 확인. `[Epic 포럼]` = Epic 직원 답변 또는 포럼 보고(링크 병기).
 대화창이 바뀌는 것은 근거의 등급과 무관하다 — 재확인 대상은 **엔진 버전이 다른 출처**뿐이다.
 
 ---
@@ -310,6 +314,9 @@ int32 GetGameplayEffectCount(TSubclassOf<UGameplayEffect> SourceGameplayEffect,
 
 `GameplayEffect.cpp`
 
+> 5.8: 이 절은 기존 스택 인스턴스가 있을 때의 경로를 설명한다(5.7 기준). 신규 적용 경로는
+> 5.8에서 달라졌다 — 16절.
+
 기본 동작의 판정은 **적용 전 스택 수 == 상한**이다. 상한을 초과하는 순간이 아니라
 **이미 상한에 도달한 상태에서 한 번 더 적용될 때** `HandleActiveGameplayEffectStackOverflow`가
 불린다. 소스 주석도 이것을 "Legacy behavior"로 표기한다.
@@ -355,6 +362,9 @@ int32 GetGameplayEffectCount(TSubclassOf<UGameplayEffect> SourceGameplayEffect,
 모델은 스택이냐 인스턴스냐를 알지 못한 채 숫자 하나만 들면 된다 — 두 메커니즘이 코드에서
 섞일 여지 자체가 사라진다.
 
+`[5.8 재확인(2026-10-21)]` 비스택형은 5.8.4 PIE에서 같게 나왔다(`GE_Buff_AttackUp` 2회 → 개수 2).
+스택형(냉기 4스택)의 합산은 16절의 버그로 5.8에서 재확인하지 못했다.
+
 ## 15. GMS는 이 용도에 쓰지 않는다
 
 Phase 6의 Gameplay Message Subsystem은 `FSaytDamageMessage`용이고 효과 적용/제거를
@@ -364,9 +374,51 @@ Phase 6의 Gameplay Message Subsystem은 `FSaytDamageMessage`용이고 효과 �
 **상태**면 목록 소유 + 델리게이트. 「현재 걸려 있는 효과 목록」은 상태이고, 늦게 참여한
 구독자가 그 전의 것을 알아야 하므로 방송으로는 성립하지 않는다.
 
+## 16. 5.8 변경 — 신규 적용 경로가 첫 적용에서 오버플로를 발동한다 (엔진 버그)
+
+`GameplayEffect.cpp` `[5.8 실측]`
+
+5.8.4 소스의 `ApplyGameplayEffectSpec`은 적용 경로가 둘이다.
+
+- **같은 GE의 스택 인스턴스가 이미 있는 경로**: `bStackCountAtLimit || bWillOverflowStacks`일 때만
+  `HandleActiveGameplayEffectStackOverflow`를 부른다.
+- **신규 인스턴스를 만드는 경로**: 스택 수를 0으로 만든 스펙 사본으로 같은 함수를 **조건 없이**
+  부른다(주석은 첫 적용에 여러 스택이 한꺼번에 들어오는 경우를 위한 것이라고 적는다). 이 함수는
+  `OverflowEffects`를 먼저 적용하고, `bDenyOverflowApplication`과 `bClearStackOnOverflow`가 모두
+  켜져 있으면 방금 만든 인스턴스를 제거한 뒤 적용을 거부한다.
+
+→ `OverflowEffects`가 있는 스택형 GE는 **첫 적용에서 이미 오버플로 효과가 나간다.** 13절은 기존
+인스턴스 경로의 설명이고, 신규 경로는 5.8에서 이렇게 달라졌다.
+
+**관측** `[5.8 실측, 2026-10-21]` `GE_Debuff_Chill`(상한 4, 오버플로 = 빙결, Deny·ClearStack 켬)을
+한 번 적용하면 같은 프레임에 트레이에 냉기(개수 0)와 빙결(개수 1)이 함께 나타나고 냉기가 곧바로
+사라진다. 빙결이 유지되는 동안의 Chill 적용은 트레이에 변화가 없다(빙결 태그 차단 컴포넌트 때문으로
+보이나 원인 로그는 확인하지 않았다).
+
+**Epic 상태** `[Epic 포럼]` Epic 직원이 "initial stack counts에 대한 oversight"로 확인하고 Jira
+티켓을 만들었다(2026-07-22). 5.8.2까지 수정되지 않았다는 댓글이 있고(2026-08-31), 5.8.4에서도
+재현된다. 5.8.4 핫픽스 공지에는 이 항목이 없다.
+- https://forums.unrealengine.com/t/gameplayeffect-fires-overfloweffects-on-the-first-application/2745478
+- https://forums.unrealengine.com/t/ue-5-8-1-gas-overfloweffect-triggers-on-first-stack-application/2739192
+
+**CVar와 무관하다.** `AbilitySystem.ActiveGameplayEffectOverflowBehavior`의 기본값은 `Current`
+(`HandleOverflowingStacksAlways | ApplyRemainingStacksWhenOverflow`)이고 `0`이 Legacy다. 신규
+경로의 호출은 이 CVar를 확인하지 않는다(소스 독해, 포럼 보고도 동일). 기존 경로에서 스택 1개짜리
+적용의 판정은 Legacy와 같다 — 소스 독해일 뿐 PIE로 재확인하지 않았다.
+
+**대응 (C안, 2026-10-21 결정)** 에셋과 코드는 바꾸지 않는다. Chill → Freeze 전이 검증은 엔진 수정까지
+보류한다. 채택하지 않은 대안: (A) 5.7.4로 롤백, (B) Chill의 `OverflowEffects`를 제거하고 스택 상한
+도달을 코드가 감지해 Freeze를 적용(설계 변경이 크다).
+
+**재확인 트리거** 5.8.x 핫픽스를 적용할 때 R1의 냉기 4스택·5회째 전이 시나리오를 다시 실행한다.
+이 버그 때문에 13절의 `[5.7 PIE 실측]` 두 항목(적용 거부와 오버플로 발동은 별개 판정, 통지 순서)은
+정상 경로로 5.8에서 재확인하지 못했다.
+
 ---
 
 ## 5.7 실측 — GE 스태킹 프로퍼티 (한글화 에디터 디테일 패널)
+
+5.8 에디터에서 UI 명칭이 같은지는 확인하지 않았다.
 
 | 한글 UI | 이번에 쓴 값 |
 |---|---|
@@ -388,6 +440,6 @@ Phase 6의 Gameplay Message Subsystem은 `FSaytDamageMessage`용이고 효과 �
 
 | 항목 | 왜 추적하지 않는가 |
 |---|---|
-| `EActiveGameplayEffectOverflowBehavior`를 켜는 방법 | 상한 도달 대신 초과 시점에 발동시키는 비-기본 동작. Stage 3은 기본 동작을 쓴다 |
+| `EActiveGameplayEffectOverflowBehavior`의 두 플래그가 한 번에 여러 스택이 들어올 때 만드는 차이 | 5.8.4에서는 기본값이 `Current`다(16절). 스택 1개짜리 적용만 쓰는 Stage 3에서는 판정이 같다 |
 | Gameplay Debugger 사용법 | `showdebug abilitysystem` 화면 하단이 안내하는 상위 도구. Phase 9~11에서 다룰 여지 |
 | `UWidgetComponent` Screen Space 내부 동작 | Stage 2 이연 항목. Phase 11 |

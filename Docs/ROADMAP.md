@@ -1,8 +1,11 @@
 # Sayt — 개발 로드맵
 
-UE 5.7.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트폴리오.
+UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트폴리오.
 엔진 내장 시스템을 우선 검토하고, Lyra 등 공식 레퍼런스를 비판적으로 수용하며,
 설계 결정마다 trade-off를 기록하는 것을 원칙으로 한다.
+
+> 2026-10-21: 엔진을 5.7.4에서 5.8.4로, IDE를 Rider에서 Visual Studio 2026으로 전환했다
+> (Phase 8 Stage 3 파트 A 종료 시점). 아래 Phase 0 행의 5.7.4와 Rider는 당시 기록이다.
 
 ## Phase 개요
 
