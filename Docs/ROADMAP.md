@@ -27,6 +27,20 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 패키징 시 느슨한 UI 텍스처 스테이징 설정(Additional Non-Asset Directories: UI — Stage 2-4 부채)| 대기 |
 | 13 (선택) | Mass Entity(ECS 대규모 군중) — 착수 시점에 당시 엔진 버전 기준 공식 문서 재벤치마크 후 커리큘럼 확정. 지원 시작선 이후, 심화 백로그와 병렬 | 선택 |
 
+## 계획 조정 결정 (2026-10-21)
+
+전체 점검 세션에서 확정한 조정이다. 아래 표 밖의 Phase 구성은 그대로다.
+
+| 항목 | 결정 | 근거·비고 |
+|---|---|---|
+| Stage 3 파트 B, Stage 5 | Slate 직접 제작(STileView 등)에서 **UMG+C++ ViewModel(MVVM) 경로**로 변경 | Slate 심화의 원래 동기는 스마일게이트 클라이언트 공고의 Slate 우대사항. Stage 1~2(Leaf 체력바, Panel 월드 패널, 위젯 풀)로 Slate 증명은 확보. 이후 UI는 실무 표준 경로(UMG+MVVM)를 증명. 쿨다운 라디얼(`OnPaint`)을 UMG로 감싸는 소형 Slate 위젯으로 남길지는 파트 B 설계 시 결정 |
+| Stage 4 | 착수 전 **대안 조사 단원** 선행 | 타격 이펙트(GameplayCue 재활용·Niagara·현행 GMS+자체 풀), 데미지 숫자(Niagara·UMG 풀·Slate 풀, Lyra 구현 확인)를 복제 관점까지 비교. 기준은 CONVENTIONS 기술 선택 5축(실무성·범용성·공식 권장·최신성·포폴 적합성) |
+| Phase 10 | **위치 유지 + 복제 대비 규칙을 지금 적용(C안)** | 규칙은 `CONVENTIONS.md` 복제 대비 규칙 절. Stage 4 조사 결과를 보고 앞당김 여부(B안)를 재판단. 견적(2주)은 재산정 대상 |
+| 수직 슬라이스 | **도입(애자일 방식)** — 얇은 전투 루프를 먼저 만들고 반복 개선 | 범위 고정: 추격하는 적 1종, 피격 반응·사망 처리, 플레이어 사망·재시작. Phase 11(StateTree, 보스 페이즈)은 이 슬라이스를 기반으로 확장. 편성 시점은 Stage 3 종료 시 확정 |
+| 자동화 테스트 | 기존 콘텐츠(인벤토리)는 **제외**. 신규 콘텐츠 설계 시 테스트 가능성 검토 | 인벤토리는 변경 가능성이 높고 리소스도 부족. 후보는 `SAYT_BACKLOG.md` 인박스 참조 |
+| Phase 0~7 소급 기록 | 변경 없음 (`DECISIONS.md` 기록 시점 규칙 유지) | 필요해지면 별도 결정 |
+| 외부 조사 | 진행 중 — 공개 샘플·포럼 사례, Paragon 대체, AI 생성 에셋 | 결과는 확정 후 이 절에 추가 |
+
 ## 로드맵 재편 세션 결과 (2026-07-18 확정)
 
 ### 코드베이스 감사 판정 (Phase 0~7 전 소스)
@@ -88,9 +102,9 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 | 0 | Live-tuning 워밍업 — 직접 마우스 입력(FReply), TAttribute Pull | ✅ |
 | 1 | SHealthBar 코어 — GAS Push 델리게이트, TSlateAttribute, 고스트 바(ActiveTimer), 스타일셋 | ✅ |
 | 2 | Boss/Monster HP — 세그먼트 보스 바(구슬 스택 방식 main + 줄 체력 색 스왑 변형), SActorCanvas형 월드 패널 | ✅ (폴리시·측정 이연) |
-| 3 | 버프/디버프 트레이 — STileView, OnPaint 라디얼 쿨다운 (UMG 래핑 필수) | 대기 |
-| 4 | 데미지 폰트 — SWidget 오브젝트 풀 + FCurveSequence (+풀링 `UWorldSubsystem` 리팩터) | 대기 |
-| 5 | 스킬 슬롯 바 — 데이터 기반 슬롯 구성 (UMG 래핑 필수) | 대기 |
+| 3 | 버프/디버프 트레이 — 파트 A(표시 모델 컴포넌트) 완료. 파트 B는 UMG+MVVM 경로로 변경(2026-10-21, 아래 조정 결정 참조) | 🔧 |
+| 4 | 데미지 폰트 + 풀링 리팩터 — **착수 전 대안 조사 단원 선행**(GameplayCue·Niagara·UMG 풀 비교). 조사 결과로 방식 확정 | 대기 |
+| 5 | 스킬 슬롯 바 — 데이터 기반 슬롯 구성, UMG+MVVM 경로(2026-10-21 변경) | 대기 |
 
 **전 Stage 공통 체크리스트**
 1. 데이터 바인딩 경계 명시 — 소스가 통지를 제공하면 Push(델리게이트), 아니면 Pull(TAttribute)
