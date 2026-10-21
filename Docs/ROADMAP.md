@@ -34,8 +34,8 @@ UE 5.8.4 / C++ 기반, GAS(Gameplay Ability System) 중심의 액션 RPG 포트�
 | 항목 | 결정 | 근거·비고 |
 |---|---|---|
 | Stage 3 파트 B, Stage 5 | Slate 직접 제작(STileView 등)에서 **UMG+C++ ViewModel(MVVM) 경로**로 변경 | Slate 심화의 원래 동기는 스마일게이트 클라이언트 공고의 Slate 우대사항. Stage 1~2(Leaf 체력바, Panel 월드 패널, 위젯 풀)로 Slate 증명은 확보. 이후 UI는 실무 표준 경로(UMG+MVVM)를 증명. 쿨다운 라디얼(`OnPaint`)을 UMG로 감싸는 소형 Slate 위젯으로 남길지는 파트 B 설계 시 결정 |
-| Stage 4 | 착수 전 **대안 조사 단원** 선행 | 타격 이펙트(GameplayCue 재활용·Niagara·현행 GMS+자체 풀), 데미지 숫자(Niagara·UMG 풀·Slate 풀, Lyra 구현 확인)를 복제 관점까지 비교. 기준은 CONVENTIONS 기술 선택 5축(실무성·범용성·공식 권장·최신성·포폴 적합성) |
-| Phase 10 | **위치 유지 + 복제 대비 규칙을 지금 적용(C안)** | 규칙은 `CONVENTIONS.md` 복제 대비 규칙 절. Stage 4 조사 결과를 보고 앞당김 여부(B안)를 재판단. 견적(2주)은 재산정 대상 |
+| Stage 4 | 착수 전 **대안 조사 단원** 선행 | 타격 이펙트(GameplayCue 재활용·Niagara·현행 GMS+자체 풀), 데미지 숫자(Niagara·UMG 풀·Slate 풀, Lyra 구현 확인)를 리플리케이션 관점까지 비교. 기준은 CONVENTIONS 기술 선택 5축(실무성·범용성·공식 권장·최신성·포폴 적합성) |
+| Phase 10 | **위치 유지 + 리플리케이션 대비 규칙을 지금 적용(C안)** | 규칙은 `CONVENTIONS.md` 리플리케이션 대비 규칙 절. Stage 4 조사 결과를 보고 앞당김 여부(B안)를 재판단. 견적(2주)은 재산정 대상 |
 | 수직 슬라이스 | **도입(애자일 방식)** — 얇은 전투 루프를 먼저 만들고 반복 개선 | 범위 고정: 추격하는 적 1종, 피격 반응·사망 처리, 플레이어 사망·재시작. Phase 11(StateTree, 보스 페이즈)은 이 슬라이스를 기반으로 확장. 편성 시점은 Stage 3 종료 시 확정 |
 | 자동화 테스트 | 기존 콘텐츠(인벤토리)는 **제외**. 신규 콘텐츠 설계 시 테스트 가능성 검토 | 인벤토리는 변경 가능성이 높고 리소스도 부족. 후보는 `SAYT_BACKLOG.md` 인박스 참조 |
 | Phase 0~7 소급 기록 | 변경 없음 (`DECISIONS.md` 기록 시점 규칙 유지) | 필요해지면 별도 결정 |
