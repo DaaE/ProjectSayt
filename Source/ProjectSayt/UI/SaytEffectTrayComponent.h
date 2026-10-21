@@ -51,7 +51,7 @@ struct FSaytEffectTrayEntry
 
 	/**
 	 * 파트 C에서 이 핸들로 잔여 시간을 조회한다. 그룹 대표(첫 등장) 하나만 보관.
-	 * UPROPERTY를 붙이지 않는다 — 핸들은 로컬 ASC 컨테이너의 인덱스라 복제해도
+	 * UPROPERTY를 붙이지 않는다 — 핸들은 로컬 ASC 컨테이너의 인덱스라 리플리케이션해도
 	 * 의미가 없고, UObject 강참조도 아니라 GC 대상이 아니다.
 	 */
 	FActiveGameplayEffectHandle RepresentativeHandle;
