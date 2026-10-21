@@ -15,6 +15,7 @@ Plugins/Developer/RiderLink/
 *.VC.db
 *.VC.opendb
 *.sln
+*.slnx
 
 # 파생 파일
 FileOpenOrder/
