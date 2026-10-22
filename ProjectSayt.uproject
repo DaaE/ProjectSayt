@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{1246D157-4011-E574-38B8-998989C4AE96}",
+	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -12,7 +12,8 @@
 				"Engine",
 				"GameplayAbilities",
 				"UMG",
-				"DeveloperSettings"
+				"DeveloperSettings",
+				"ModelViewViewModel"
 			]
 		},
 		{

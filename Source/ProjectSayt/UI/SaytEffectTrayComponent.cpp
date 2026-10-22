@@ -276,6 +276,8 @@ void USaytEffectTrayComponent::RebuildEntries()
 		const bool bHasDuration = (Def->DurationPolicy == EGameplayEffectDurationType::HasDuration);
 
 		FSaytEffectTrayEntry& NewEntry = Entries.AddDefaulted_GetRef();
+		// 위의 SeenDefs 덕분에 GE당 한 항목이므로 이 키는 Entries 안에서 유일하다.
+		NewEntry.EffectClass = Def->GetClass();
 		// UI Data는 CDO 공유 불변 데이터라 매번 읽어도 같은 값이다(노트 6절).
 		// 값 3개를 복사해 담아 Entries가 GAS 타입을 참조하지 않게 한다.
 		NewEntry.DisplayName = UIData->DisplayName;
