@@ -17,7 +17,7 @@ struct FGameplayEffectSpec;
 /**
  * 트레이에 그릴 항목 하나. GE 클래스 단위로 묶인 결과물이다.
  *
- * GAS 타입을 값으로 복사해 담는다(대표 핸들 하나만 예외). 이렇게 하면 위젯이
+ * GAS 타입을 값으로 복사해 담는다(대표 핸들과 효과 클래스 키만 예외). 이렇게 하면 위젯이
  * 이 배열만 받아 GAS 없이 더미 데이터로 렌더 테스트가 된다 — Stage 2
  * FSaytSegmentedHealth와 같은 형태다.
  *
@@ -28,6 +28,14 @@ USTRUCT()
 struct FSaytEffectTrayEntry
 {
 	GENERATED_BODY()
+
+	/**
+	 * 항목의 신원 키. ViewModel이 방송 사이에서 같은 항목을 알아보는 데 쓴다.
+	 * 컴포넌트가 GE당 한 항목만 만들므로 Entries 안에서 유일하다.
+	 * 표시용이 아니라 대조용이다 — 표시 이름은 아래 DisplayName이 맡는다.
+	 */
+	UPROPERTY()
+	TSubclassOf<UGameplayEffect> EffectClass;
 
 	/** 툴팁·접근성 텍스트가 쓴다. 로그도 이 이름만 쓴다(내부 GE 이름은 노출하지 않는다). */
 	UPROPERTY()
@@ -51,8 +59,9 @@ struct FSaytEffectTrayEntry
 
 	/**
 	 * 파트 C에서 이 핸들로 잔여 시간을 조회한다. 그룹 대표(첫 등장) 하나만 보관.
-	 * UPROPERTY를 붙이지 않는다 — 핸들은 로컬 ASC 컨테이너의 인덱스라 리플리케이션해도
-	 * 의미가 없고, UObject 강참조도 아니라 GC 대상이 아니다.
+	 * UPROPERTY를 붙이지 않는다 — 핸들은 효과 적용 때마다 전역 카운터로 발급되는 로컬 식별자이고
+	 * 클라이언트·서버 사이에 동기화되지 않아 리플리케이션해도 의미가 없다. UObject 강참조도
+	 * 아니라 GC 대상이 아니다.
 	 */
 	FActiveGameplayEffectHandle RepresentativeHandle;
 };
